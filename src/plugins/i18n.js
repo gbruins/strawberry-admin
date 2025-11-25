@@ -26,7 +26,7 @@ export const i18n = () => {
         locale: defaultLocale,
         fallbackLocale: defaultLocale,
         messages: loadLocaleMessages(),
-        warnHtmlInMessage: false,
+        missingWarn: true,
         datetimeFormats: {
             'en-US': {
                 short: {

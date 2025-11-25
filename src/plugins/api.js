@@ -2,12 +2,13 @@ import axios from 'axios';
 import qs from 'qs';
 import isObject from 'lodash.isobject';
 import Product from '@/api/product';
+import ProductType from '@/api/product_type';
+import AllowedStreet from '@/api/allowed_street';
+import AddressDiscount from '@/api/address_discount';
 
 export default {
     install: (app) => {
-
         const baseURL = import.meta.env.VITE_API_BASE_URL;
-        console.log('API Base URL:', baseURL);
 
         const axiosInstance = axios.create({
             baseURL: baseURL,
@@ -116,7 +117,10 @@ export default {
         }
 
         app.provide('$api', {
+            addressDiscount: AddressDiscount(utils, axiosInstance),
+            allowedStreet: AllowedStreet(utils, axiosInstance),
             product: Product(utils, axiosInstance),
+            productType: ProductType(utils, axiosInstance),
         });
     }
 }

@@ -1,0 +1,101 @@
+export default {
+    '{num} / page': '{num} / page',
+    '{num} files selected': '{num} files selected',
+    '{num} result | {num} results': '{num} result | {num} results',
+
+    'Actions': 'Actions',
+    'Active': 'Active',
+    'Add address discount': 'Add address discount',
+    'Address discount saved successfully': 'Address discount saved successfully',
+    'Address discounts': 'Address discounts',
+    'Allowed streets': 'Allowed streets',
+    'An unexpected error occurred.': 'An unexpected error occurred.',
+
+    'Browse': 'Browse',
+
+    'cancel': 'cancel',
+    'Create address discount': 'Create address discount',
+    'Created': 'Created',
+
+    'Delete this item?': 'Delete this item?',
+    'Description': 'Description',
+    'Discount': 'Discount',
+    'Discount percentage': 'Discount percentage',
+    'Displaying {start} - {end}': 'Displaying {start} - {end}',
+
+    'Error': 'Error',
+
+    'false': 'false',
+
+    'Item deleted successfully': 'Item deleted successfully',
+
+    'Login': 'Login',
+
+    'Name': 'Name',
+    'No data': 'No data',
+
+    'OK': 'OK',
+
+    'Price': 'Price',
+    'Product types': 'Product types',
+    'Products': 'Products',
+    'Published': 'Published',
+
+    'See all tax codes': 'See all tax codes',
+    'See common tax codes': 'See common tax codes',
+
+    'Street name': 'Street name',
+    'Street number': 'Street number',
+    'Submit': 'Submit',
+
+    'Title': 'Title',
+    'Type': 'Type',
+    'true': 'true',
+
+    'Update address discount': 'Update address discount',
+
+    // Date formatting
+    'date.format.mdy': 'dd/LLL/yy',
+    'date.format.mdy_hm': 'dd/LLL/yy h:mm a',
+    'date.format.hm': 'h:mm a',
+    'date.month.1': 'January',
+    'date.month.2': 'February',
+    'date.month.3': 'March',
+    'date.month.4': 'April',
+    'date.month.5': 'May',
+    'date.month.6': 'June',
+    'date.month.7': 'July',
+    'date.month.8': 'August',
+    'date.month.9': 'September',
+    'date.month.10': 'October',
+    'date.month.11': 'November',
+    'date.month.12': 'December',
+    'date.month.1.short': 'Jan',
+    'date.month.2.short': 'Feb',
+    'date.month.3.short': 'Mar',
+    'date.month.4.short': 'Apr',
+    'date.month.5.short': 'May',
+    'date.month.6.short': 'Jun',
+    'date.month.7.short': 'Jul',
+    'date.month.8.short': 'Aug',
+    'date.month.9.short': 'Sep',
+    'date.month.10.short': 'Oct',
+    'date.month.11.short': 'Nov',
+    'date.month.12.short': 'Dec',
+    'date.weekday.monday': 'Monday',
+    'date.weekday.tuesday': 'Tuesday',
+    'date.weekday.wednesday': 'Wednesday',
+    'date.weekday.thursday': 'Thursday',
+    'date.weekday.friday': 'Friday',
+    'date.weekday.saturday': 'Saturday',
+    'date.weekday.sunday': 'Sunday',
+    'date.weekday.monday.short': 'Mon',
+    'date.weekday.tuesday.short': 'Tue',
+    'date.weekday.wednesday.short': 'Wed',
+    'date.weekday.thursday.short': 'Thu',
+    'date.weekday.friday.short': 'Fri',
+    'date.weekday.saturday.short': 'Sat',
+    'date.weekday.sunday.short': 'Sun',
+    'date.meridiem.am': 'AM',
+    'date.meridiem.pm': 'PM',
+};
