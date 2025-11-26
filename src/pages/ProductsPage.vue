@@ -1,24 +1,29 @@
 <script setup lang="ts">
 import  { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
 import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
 import FigTh from '@/components/figleaf/tableSimple/Th.vue';
 import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
 import FigTd from '@/components/figleaf/tableSimple/Td.vue';
 import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
+import FigButton from '@/components/figleaf/button/Button.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import FigMoney from '@/components/figleaf/money/Money.vue';
 import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
 import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
+import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
+import ProductUpsertModal from '@/components/products/ProductUpsertModal.vue';
+import ProductTypeDisplay from '@/components/productTypes/ProductTypeDisplay.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
 import usePagination from '@/components/figleaf/pagination/usePagination.js';
+import useToast from '@/components/figleaf/toast/useToast';
 
 const $apiSearch = useApi('product.search');
-const $apiRead = useApi('product.read');
-const $apiCreate = useApi('product.create');
-const $apiUpdate = useApi('product.update');
 const $apiDelete = useApi('product.delete');
+const { t } = useI18n();
+const { successToast } = useToast();
 const { setData, getPaginationApiParams } = usePagination();
 const {
     onSort,
@@ -30,8 +35,7 @@ const {
     tableHasNoResults
 } = useTable();
 
-
-const createdProductId = ref<string | null>(null);
+const upsertModal = ref(null);
 
 function fetchData() {
     return $apiSearch.tryCatch(
@@ -43,6 +47,20 @@ function fetchData() {
 
             setTableResults(response.data);
             setTableTotalResultsCount(response.pagination.total);
+        }
+    );
+}
+
+function onDeleteItem(id: string) {
+    return $apiDelete.tryCatch(
+        async () => {
+            await $apiDelete.run(id);
+
+            successToast({
+                title: t('Item deleted successfully')
+            });
+
+            fetchData();
         }
     );
 }
@@ -65,6 +83,14 @@ onMounted(() => {
 <template>
     <page-title>{{ $t('Products') }}</page-title>
 
+    <div class="mb-4 text-right">
+        <fig-button
+            variant="primary"
+            @click="upsertModal.show()">
+            {{ $t('Add product') }}
+        </fig-button>
+    </div>
+
     <fig-overlay :show="$apiSearch.isLoading.value">
         <fig-pagination-wrapper
             bottom
@@ -78,21 +104,28 @@ onMounted(() => {
                 <template #head>
                     <fig-tr>
                         <fig-th sort="title" class="text-left">{{ $t('Title') }}</fig-th>
+                        <fig-th sort="description" class="text-left">{{ $t('Description') }}</fig-th>
                         <fig-th class="text-left">{{ $t('Type') }}</fig-th>
                         <fig-th sort="base_price" class="text-right">{{ $t('Price') }}</fig-th>
                         <fig-th sort="published" class="text-left">{{ $t('Published') }}</fig-th>
+                        <fig-th class="text-center">{{ $t('Actions') }}</fig-th>
                     </fig-tr>
                 </template>
 
                 <fig-tr v-for="(obj, idx) in tableResults" :key="idx">
-                    <!-- image -->
+                    <!-- title -->
                     <fig-td>
                         {{ obj.title }}
                     </fig-td>
 
-                    <!-- title -->
+                    <!-- description -->
                     <fig-td>
-                        {{ obj.product_type }}
+                        {{ obj.description }}
+                    </fig-td>
+
+                    <!-- type -->
+                    <fig-td>
+                        <product-type-display :value="obj.product_type" />
                     </fig-td>
 
                     <!-- price -->
@@ -104,10 +137,36 @@ onMounted(() => {
                     <fig-td>
                         <fig-boolean-tag :value="obj.published" />
                     </fig-td>
+
+                    <!-- actions -->
+                    <fig-td>
+                        <div class="flex items-center justify-center w-full gap-4">
+                            <fig-button
+                                variant="plain"
+                                iconOnly
+                                icon="edit"
+                                @click="upsertModal.show(obj.id)" />
+
+                            <fig-pop-confirm
+                                @confirm="onDeleteItem(obj.id)">
+                                <template v-slot:reference>
+                                    <fig-button
+                                        variant="danger"
+                                        iconOnly
+                                        icon="trash" />
+                                </template>
+                                {{ $t('Delete this item?') }}
+                            </fig-pop-confirm>
+                        </div>
+                    </fig-td>
                 </fig-tr>
 
                 <fig-tr-no-results v-if="tableHasNoResults" :colspan="8" />
             </fig-table-simple>
         </fig-pagination-wrapper>
     </fig-overlay>
+
+    <product-upsert-modal
+        ref="upsertModal"
+        @success="fetchData" />
 </template>

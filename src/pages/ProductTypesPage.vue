@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import  { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useAppStore } from '@/stores/app.js';
 import PageTitle from '@/components/layouts/PageTitle.vue';
 import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
 import FigTh from '@/components/figleaf/tableSimple/Th.vue';
@@ -23,6 +24,7 @@ const $apiDelete = useApi('productType.delete');
 const { t } = useI18n();
 const { successToast } = useToast();
 const { setData, getPaginationApiParams } = usePagination();
+const appStore = useAppStore();
 const {
     onSort,
     getSortApiParams,
@@ -59,6 +61,7 @@ function onDeleteItem(id: string) {
             });
 
             fetchData();
+            appStore.updateProductTypesState();
         }
     );
 }

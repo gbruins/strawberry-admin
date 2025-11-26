@@ -7,6 +7,7 @@ export default {
     'Active': 'Active',
     'Add address discount': 'Add address discount',
     'Add allowed street': 'Add allowed street',
+    'Add product': 'Add product',
     'Add product type': 'Add product type',
     'Address discount saved successfully': 'Address discount saved successfully',
     'Address discounts': 'Address discounts',
@@ -14,11 +15,13 @@ export default {
     'Allowed streets': 'Allowed streets',
     'An unexpected error occurred.': 'An unexpected error occurred.',
 
+    'Base price': 'Base price',
     'Browse': 'Browse',
 
     'cancel': 'cancel',
     'Create address discount': 'Create address discount',
     'Create allowed street': 'Create allowed street',
+    'Create product': 'Create product',
     'Create product type': 'Create product type',
     'Created': 'Created',
 
@@ -42,8 +45,10 @@ export default {
     'OK': 'OK',
 
     'Price': 'Price',
-    'Product types': 'Product types',
+    'Product saved successfully': 'Product saved successfully',
+    'Product type': 'Product type',
     'Product type saved successfully': 'Product type saved successfully',
+    'Product types': 'Product types',
     'Products': 'Products',
     'Published': 'Published',
 
@@ -52,6 +57,8 @@ export default {
 
     'Street name': 'Street name',
     'Street number': 'Street number',
+    'Stripe price ID': 'Stripe price ID',
+    'Stripe product ID': 'Stripe product ID',
     'Submit': 'Submit',
 
     'Title': 'Title',
@@ -60,6 +67,7 @@ export default {
 
     'Update address discount': 'Update address discount',
     'Update allowed street': 'Update allowed street',
+    'Update product': 'Update product',
     'Update product type': 'Update product type',
 
     // Date formatting
