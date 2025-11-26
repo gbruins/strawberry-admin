@@ -7,6 +7,7 @@ export default {
     'Active': 'Active',
     'Add address discount': 'Add address discount',
     'Add allowed street': 'Add allowed street',
+    'Add product type': 'Add product type',
     'Address discount saved successfully': 'Address discount saved successfully',
     'Address discounts': 'Address discounts',
     'Allowed street saved successfully': 'Allowed street saved successfully',
@@ -18,6 +19,7 @@ export default {
     'cancel': 'cancel',
     'Create address discount': 'Create address discount',
     'Create allowed street': 'Create allowed street',
+    'Create product type': 'Create product type',
     'Created': 'Created',
 
     'Delete this item?': 'Delete this item?',
@@ -41,6 +43,7 @@ export default {
 
     'Price': 'Price',
     'Product types': 'Product types',
+    'Product type saved successfully': 'Product type saved successfully',
     'Products': 'Products',
     'Published': 'Published',
 
@@ -57,6 +60,7 @@ export default {
 
     'Update address discount': 'Update address discount',
     'Update allowed street': 'Update allowed street',
+    'Update product type': 'Update product type',
 
     // Date formatting
     'date.format.mdy': 'dd/LLL/yy',

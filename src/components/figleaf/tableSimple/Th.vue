@@ -6,7 +6,7 @@ export default {
 
 <script setup>
 import { inject, computed } from 'vue';
-import SvgIcon from '@/components/svgIcon/SvgIcon.vue';
+import SvgIcon from '@/components/figleaf/svgIcon/SvgIcon.vue';
 import debounce from 'lodash.debounce';
 
 const props = defineProps({

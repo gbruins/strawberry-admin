@@ -1,5 +1,5 @@
 <script>
-import usePaginationBar from '@/components/pagination/paginationBar/usePaginationBar.js';
+import usePaginationBar from '@/components/figleaf/pagination/paginationBar/usePaginationBar.js';
 export const {
     paginationBarProps,
     paginationBarEmits
@@ -13,9 +13,9 @@ export default {
 <script setup>
 import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import FigPaginationNav from '@/components/pagination/paginationNav/PaginationNav.vue';
-import FigFormSelectNative from '@/components/form/selectNative/FormSelectNative.vue';
-import usePagination from '@/components/pagination/usePagination.js';
+import FigPaginationNav from '@/components/figleaf/pagination/paginationNav/PaginationNav.vue';
+import FigFormSelectNative from '@/components/figleaf/form/selectNative/FormSelectNative.vue';
+import usePagination from '@/components/figleaf/pagination/usePagination.js';
 
 const props = defineProps({
     ...paginationBarProps
@@ -60,9 +60,9 @@ const totalNumberOfResultsText = computed(() => {
 });
 
 const perPageSelectOptions = computed(() => {
-    return props.perPageOptions.map((val) => ({ 
-        label: t('{num} / page', { num: val }), 
-        value: parseInt(val, 10) 
+    return props.perPageOptions.map((val) => ({
+        label: t('{num} / page', { num: val }),
+        value: parseInt(val, 10)
     }))
 });
 
@@ -91,7 +91,7 @@ watch(
                 <div>&middot;</div>
                 <div>{{ displayingText }}</div>
                 <div>&middot;</div>
-                        
+
                 <!-- per page -->
                 <fig-form-select-native
                     v-model="Pagination.data.pageSize"

@@ -6,7 +6,7 @@ export default {
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import Spinner from '@/components/spinner/Spinner.vue';
+import Spinner from '@/components/figleaf/spinner/Spinner.vue';
 import {
     overlaySizes,
     overlayVariants

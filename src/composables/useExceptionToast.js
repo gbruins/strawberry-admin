@@ -1,5 +1,5 @@
 import { useI18n } from 'vue-i18n';
-import useToast from '@/components/toast/useToast.js';
+import useToast from '@/components/figleaf/toast/useToast.js';
 
 export default () => {
     const { errorToast } = useToast();

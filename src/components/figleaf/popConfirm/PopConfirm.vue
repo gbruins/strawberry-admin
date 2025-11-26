@@ -7,10 +7,10 @@ export default {
 <script setup>
 import { ref, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import FigButton from '@/components/button/Button.vue';
-import FigPopover from '@/components/popover/Popover.vue';
-import FigPopoverContent from '@/components/popover/PopoverContent.vue';
-import { popoverProps } from '@/components/popover/constants.js';
+import FigButton from '@/components/figleaf/button/Button.vue';
+import FigPopover from '@/components/figleaf/popover/Popover.vue';
+import FigPopoverContent from '@/components/figleaf/popover/PopoverContent.vue';
+import { popoverProps } from '@/components/figleaf/popover/constants.js';
 
 const props = defineProps({
     showConfirmButton: {

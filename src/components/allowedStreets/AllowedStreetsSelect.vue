@@ -7,7 +7,7 @@ export default {
 <script setup>
 import { computed } from 'vue';
 import { useAppStore } from '@/stores/app.js';
-import FigFormMultiSelect from '@/components/form/multiSelect/FormMultiSelect.vue';
+import FigFormMultiSelect from '@/components/figleaf/form/multiSelect/FormMultiSelect.vue';
 
 const modelValue = defineModel();
 

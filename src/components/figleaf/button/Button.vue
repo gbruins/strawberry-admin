@@ -6,8 +6,8 @@ export default {
 
 <script setup>
 import { computed, useSlots } from 'vue';
-import SvgIcon from '@/components/svgIcon/SvgIcon.vue';
-import Spinner from '@/components/spinner/Spinner.vue';
+import SvgIcon from '@/components/figleaf/svgIcon/SvgIcon.vue';
+import Spinner from '@/components/figleaf/spinner/Spinner.vue';
 import {
     buttonSizes,
     buttonVariants,

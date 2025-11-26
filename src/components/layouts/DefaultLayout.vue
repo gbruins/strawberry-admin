@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { RouterLink } from 'vue-router';
-import SvgIcon from '@/components/svgIcon/SvgIcon.vue';
+import FigSvgIcon from '@/components/figleaf/svgIcon/SvgIcon.vue';
 
 const sidebarOpened = ref(true);
 
@@ -52,7 +52,7 @@ function toggleSidebar() {
                     <button
                         class="layout-sidenav-toggle-button"
                         @click="toggleSidebar">
-                        <svg-icon
+                        <fig-svg-icon
                             :icon="sidebarOpened ? 'chevrons-left': 'chevrons-right'"
                             :width="30"
                             :height="30"

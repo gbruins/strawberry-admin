@@ -6,8 +6,8 @@ export default {
 
 <script setup>
 import { computed } from 'vue';
-import SvgIcon from '@/components/svgIcon/SvgIcon.vue';
-import TimerBar from '@/components/timerBar/TimerBar.vue'
+import SvgIcon from '@/components/figleaf/svgIcon/SvgIcon.vue';
+import TimerBar from '@/components/figleaf/timerBar/TimerBar.vue'
 import { toastVariants } from './constants.js';
 import useToast from './useToast';
 

@@ -7,7 +7,7 @@ export default {
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import FigTag from '@/components/tag/Tag.vue';
+import FigTag from '@/components/figleaf/tag/Tag.vue';
 
 const props = defineProps({
     value: {

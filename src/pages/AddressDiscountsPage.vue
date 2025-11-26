@@ -2,24 +2,24 @@
 import  { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import FigTableSimple from '@/components/tableSimple/TableSimple.vue';
-import FigTh from '@/components/tableSimple/Th.vue';
-import FigTr from '@/components/tableSimple/Tr.vue';
-import FigTd from '@/components/tableSimple/Td.vue';
-import FigTrNoResults from '@/components/tableSimple/TrNoResults.vue';
-import FigButton from '@/components/button/Button.vue';
-import FigNumber from '@/components/number/Number.vue';
-import Overlay from '@/components/overlay/Overlay.vue';
-import BooleanTag from '@/components/booleanTag/BooleanTag.vue';
-import PaginationWrapper from '@/components/pagination/paginationWrapper/PaginationWrapper.vue';
-import FigFormat8601 from '@/components/format8601/Format8601.vue';
-import FigPopConfirm from '@/components/popConfirm/PopConfirm.vue';
+import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
+import FigTh from '@/components/figleaf/tableSimple/Th.vue';
+import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
+import FigTd from '@/components/figleaf/tableSimple/Td.vue';
+import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
+import FigButton from '@/components/figleaf/button/Button.vue';
+import FigNumber from '@/components/figleaf/number/Number.vue';
+import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
+import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
+import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
+import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
 import AddressDiscountsUpsertModal from '@/components/addressDiscounts/AddressDiscountsUpsertModal.vue';
 import StreetNameDisplay from '@/components/allowedStreets/StreetNameDisplay.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
-import usePagination from '@/components/pagination/usePagination.js';
-import useToast from '@/components/toast/useToast';
+import usePagination from '@/components/figleaf/pagination/usePagination.js';
+import useToast from '@/components/figleaf/toast/useToast';
 
 const $apiSearch = useApi('addressDiscount.search');
 const $apiDelete = useApi('addressDiscount.delete');
@@ -92,8 +92,8 @@ onMounted(() => {
         </fig-button>
     </div>
 
-    <overlay :show="$apiSearch.isLoading.value">
-        <pagination-wrapper
+    <fig-overlay :show="$apiSearch.isLoading.value">
+        <fig-pagination-wrapper
             bottom
             :total-rows="tableTotalResultsCount"
             @pageSize="onPaginationChange"
@@ -134,7 +134,7 @@ onMounted(() => {
 
                     <!-- active -->
                     <fig-td>
-                        <boolean-tag :value="obj.active ?? obj.published ?? false" />
+                        <fig-boolean-tag :value="obj.active ?? obj.published ?? false" />
                     </fig-td>
 
                     <!-- created -->
@@ -167,8 +167,8 @@ onMounted(() => {
 
                 <fig-tr-no-results v-if="tableHasNoResults" :colspan="8" />
             </fig-table-simple>
-        </pagination-wrapper>
-    </overlay>
+        </fig-pagination-wrapper>
+    </fig-overlay>
 
     <address-discounts-upsert-modal
         ref="upsertModal"

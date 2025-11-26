@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import  { ref, onMounted } from 'vue';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import FigTableSimple from '@/components/tableSimple/TableSimple.vue';
-import FigTh from '@/components/tableSimple/Th.vue';
-import FigTr from '@/components/tableSimple/Tr.vue';
-import FigTd from '@/components/tableSimple/Td.vue';
-import FigTrNoResults from '@/components/tableSimple/TrNoResults.vue';
-import Overlay from '@/components/overlay/Overlay.vue';
-import Money from '@/components/money/Money.vue';
-import BooleanTag from '@/components/booleanTag/BooleanTag.vue';
-import PaginationWrapper from '@/components/pagination/paginationWrapper/PaginationWrapper.vue';
+import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
+import FigTh from '@/components/figleaf/tableSimple/Th.vue';
+import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
+import FigTd from '@/components/figleaf/tableSimple/Td.vue';
+import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
+import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import FigMoney from '@/components/figleaf/money/Money.vue';
+import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
+import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
-import usePagination from '@/components/pagination/usePagination.js';
+import usePagination from '@/components/figleaf/pagination/usePagination.js';
 
 const $apiSearch = useApi('product.search');
 const $apiRead = useApi('product.read');
@@ -20,8 +20,8 @@ const $apiCreate = useApi('product.create');
 const $apiUpdate = useApi('product.update');
 const $apiDelete = useApi('product.delete');
 const { setData, getPaginationApiParams } = usePagination();
-const { 
-    onSort, 
+const {
+    onSort,
     getSortApiParams,
     setTableResults,
     setTableTotalResultsCount,
@@ -33,7 +33,7 @@ const {
 
 const createdProductId = ref<string | null>(null);
 
-function getProducts() {
+function fetchData() {
     return $apiSearch.tryCatch(
         async () => {
             const response = await $apiSearch.run({
@@ -47,70 +47,26 @@ function getProducts() {
     );
 }
 
-// function getProduct() {
-//     return $apiRead.tryCatch(
-//         async () => {
-//             const response = await $apiRead.run('28a97dc5-134f-4524-88cf-3b7d2ee6094a');
-//         }
-//     );
-// }
-
-// function createProduct() {
-//     return $apiCreate.tryCatch(
-//         async () => {
-//             const response = await $apiCreate.run({
-//                 title: 'New Product',
-//                 description: 'A brand new product',
-//                 product_type: 1,
-//                 base_price: 1999,
-//                 published: true
-//             });
-//             createdProductId.value = response.data.id
-//             console.log('Product created successfully', response.data);
-//         }
-//     );
-// }
-
-// function updateProduct() {
-//     return $apiUpdate.tryCatch(
-//         async () => {
-//             const response = await $apiUpdate.run(createdProductId.value, {
-//                 title: 'Updated Product Title'
-//             });
-//             console.log('Product updated successfully', response.data);
-//         }
-//     );
-// }
-
-// function deleteProduct() {
-//     return $apiDelete.tryCatch(
-//         async () => {
-//             const response = await $apiDelete.run(createdProductId.value);
-//             console.log('Product deleted successfully', response.data);
-//         }
-//     );
-// }
-
 function onTableSort(val) {
     onSort(val);
-    getProducts();
+    fetchData();
 }
 
 function onPaginationChange(data) {
     setData(data);
-    getProducts();
+    fetchData();
 }
 
 onMounted(() => {
-    getProducts();
+    fetchData();
 });
 </script>
 
 <template>
     <page-title>{{ $t('Products') }}</page-title>
 
-    <overlay :show="$apiSearch.isLoading.value">
-        <pagination-wrapper
+    <fig-overlay :show="$apiSearch.isLoading.value">
+        <fig-pagination-wrapper
             bottom
             :total-rows="tableTotalResultsCount"
             @pageSize="onPaginationChange"
@@ -141,20 +97,17 @@ onMounted(() => {
 
                     <!-- price -->
                     <fig-td class="text-right">
-                        <money :cents="obj.base_price" />
+                        <fig-money :cents="obj.base_price" />
                     </fig-td>
 
                     <!-- published -->
                     <fig-td>
-                        <boolean-tag :value="obj.published" />
+                        <fig-boolean-tag :value="obj.published" />
                     </fig-td>
                 </fig-tr>
 
                 <fig-tr-no-results v-if="tableHasNoResults" :colspan="8" />
             </fig-table-simple>
-        </pagination-wrapper>
-    </overlay>
+        </fig-pagination-wrapper>
+    </fig-overlay>
 </template>
-
-<style>
-</style>

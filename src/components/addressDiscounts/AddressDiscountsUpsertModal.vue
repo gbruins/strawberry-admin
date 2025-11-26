@@ -7,17 +7,17 @@ export default {
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import FigFormInputText from '@/components/form/text/FormText.vue';
-import FigFormInputNumber from '@/components/form/number/FormInputNumber.vue';
-import FigFormCheckbox from '@/components/form/checkbox/FormCheckbox.vue';
-import FigLabelValueGroup from '@/components/labelValueGroup/LabelValueGroup.vue';
-import FigLabelValue from '@/components/labelValueGroup/LabelValue.vue';
-import FigButton from '@/components/button/Button.vue';
-import FigModal from '@/components/modal/Modal.vue';
-import FigOverlay from '@/components/overlay/Overlay.vue';
+import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
+import FigFormInputNumber from '@/components/figleaf/form/number/FormInputNumber.vue';
+import FigFormCheckbox from '@/components/figleaf/form/checkbox/FormCheckbox.vue';
+import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
+import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
+import FigButton from '@/components/figleaf/button/Button.vue';
+import FigModal from '@/components/figleaf/modal/Modal.vue';
+import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import AllowedStreetsSelect from '@/components/allowedStreets/AllowedStreetsSelect.vue';
 import useApi from '@/composables/useApi';
-import useToast from '@/components/toast/useToast';
+import useToast from '@/components/figleaf/toast/useToast';
 
 const emit = defineEmits([
     'success'
@@ -39,7 +39,7 @@ const form = reactive({
     active: true
 });
 
-function getBuyId(id) {
+function getById(id) {
     return $apiRead.tryCatch(
         async () => {
             const response = await $apiRead.run(id);
@@ -91,7 +91,7 @@ function show(id) {
     resetData();
 
     if(id) {
-        getBuyId(id);
+        getById(id);
     }
 
     upsertModal.value.show();

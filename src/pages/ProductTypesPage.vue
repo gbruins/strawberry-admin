@@ -1,22 +1,30 @@
 <script setup lang="ts">
 import  { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import FigTableSimple from '@/components/tableSimple/TableSimple.vue';
-import FigTh from '@/components/tableSimple/Th.vue';
-import FigTr from '@/components/tableSimple/Tr.vue';
-import FigTd from '@/components/tableSimple/Td.vue';
-import FigTrNoResults from '@/components/tableSimple/TrNoResults.vue';
-import Overlay from '@/components/overlay/Overlay.vue';
-import BooleanTag from '@/components/booleanTag/BooleanTag.vue';
-import PaginationWrapper from '@/components/pagination/paginationWrapper/PaginationWrapper.vue';
+import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
+import FigTh from '@/components/figleaf/tableSimple/Th.vue';
+import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
+import FigTd from '@/components/figleaf/tableSimple/Td.vue';
+import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
+import FigButton from '@/components/figleaf/button/Button.vue';
+import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
+import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
+import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
+import ProductTypeUpsertModal from '@/components/productTypes/ProductTypeUpsertModal.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
-import usePagination from '@/components/pagination/usePagination.js';
+import usePagination from '@/components/figleaf/pagination/usePagination.js';
+import useToast from '@/components/figleaf/toast/useToast';
 
 const $apiSearch = useApi('productType.search');
+const $apiDelete = useApi('productType.delete');
+const { t } = useI18n();
+const { successToast } = useToast();
 const { setData, getPaginationApiParams } = usePagination();
-const { 
-    onSort, 
+const {
+    onSort,
     getSortApiParams,
     setTableResults,
     setTableTotalResultsCount,
@@ -25,7 +33,9 @@ const {
     tableHasNoResults
 } = useTable();
 
-function getProductTypes() {
+const upsertModal = ref(null);
+
+function fetchData() {
     return $apiSearch.tryCatch(
         async () => {
             const response = await $apiSearch.run({
@@ -39,26 +49,48 @@ function getProductTypes() {
     );
 }
 
+function onDeleteItem(id: string) {
+    return $apiDelete.tryCatch(
+        async () => {
+            await $apiDelete.run(id);
+
+            successToast({
+                title: t('Item deleted successfully')
+            });
+
+            fetchData();
+        }
+    );
+}
+
 function onTableSort(val) {
     onSort(val);
-    getProductTypes();
+    fetchData();
 }
 
 function onPaginationChange(data) {
     setData(data);
-    getProductTypes();
+    fetchData();
 }
 
 onMounted(() => {
-    getProductTypes();
+    fetchData();
 });
 </script>
 
 <template>
     <page-title>{{ $t('Product types') }}</page-title>
 
-    <overlay :show="$apiSearch.isLoading.value">
-        <pagination-wrapper
+    <div class="mb-4 text-right">
+        <fig-button
+            variant="primary"
+            @click="upsertModal.show()">
+            {{ $t('Add product type') }}
+        </fig-button>
+    </div>
+
+    <fig-overlay :show="$apiSearch.isLoading.value">
+        <fig-pagination-wrapper
             bottom
             :total-rows="tableTotalResultsCount"
             @pageSize="onPaginationChange"
@@ -71,34 +103,56 @@ onMounted(() => {
                     <fig-tr>
                         <fig-th sort="title" class="text-left">{{ $t('Name') }}</fig-th>
                         <fig-th sort="title" class="text-left">{{ $t('Description') }}</fig-th>
-                        <!-- <fig-th class="text-left">{{ $t('Slug') }}</fig-th> -->
-                         <fig-th sort="published" class="text-left">{{ $t('Published') }}</fig-th>
+                        <fig-th sort="published" class="text-left">{{ $t('Published') }}</fig-th>
+                        <fig-th class="text-center">{{ $t('Actions') }}</fig-th>
                     </fig-tr>
                 </template>
 
                 <fig-tr v-for="(obj, idx) in tableResults" :key="idx">
+                    <!-- name -->
                     <fig-td>
                         {{ obj.name }}
                     </fig-td>
 
+                    <!-- description -->
                     <fig-td>
                         {{ obj.description }}
                     </fig-td>
 
-                    <!-- <fig-td>
-                        {{ obj.slug }}
-                    </fig-td> -->
-
+                    <!-- published -->
                     <fig-td>
-                        <boolean-tag :value="obj.published" />
+                        <fig-boolean-tag :value="obj.published" />
+                    </fig-td>
+
+                    <!-- actions -->
+                    <fig-td>
+                        <div class="flex items-center justify-center w-full gap-4">
+                            <fig-button
+                                variant="plain"
+                                iconOnly
+                                icon="edit"
+                                @click="upsertModal.show(obj.id)" />
+
+                            <fig-pop-confirm
+                                @confirm="onDeleteItem(obj.id)">
+                                <template v-slot:reference>
+                                    <fig-button
+                                        variant="danger"
+                                        iconOnly
+                                        icon="trash" />
+                                </template>
+                                {{ $t('Delete this item?') }}
+                            </fig-pop-confirm>
+                        </div>
                     </fig-td>
                 </fig-tr>
 
                 <fig-tr-no-results v-if="tableHasNoResults" :colspan="8" />
             </fig-table-simple>
-        </pagination-wrapper>
-    </overlay>
-</template>
+        </fig-pagination-wrapper>
+    </fig-overlay>
 
-<style>
-</style>
+    <product-type-upsert-modal
+        ref="upsertModal"
+        @success="fetchData" />
+</template>

@@ -1,20 +1,22 @@
 <script lang="ts">
 export default {
-    name: 'AllowedStreetsUpsertModal'
+    name: 'ProductTypeUpsertModal'
 }
 </script>
 
 <script setup lang="ts">
-import { ref, reactive, type Ref } from 'vue';
+import { ref, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAppStore } from '@/stores/app.js';
+import slugify from 'slugify';
 import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
+import FigFormInputNumber from '@/components/figleaf/form/number/FormInputNumber.vue';
 import FigFormCheckbox from '@/components/figleaf/form/checkbox/FormCheckbox.vue';
 import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
 import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
 import FigButton from '@/components/figleaf/button/Button.vue';
 import FigModal from '@/components/figleaf/modal/Modal.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import AllowedStreetsSelect from '@/components/allowedStreets/AllowedStreetsSelect.vue';
 import useApi from '@/composables/useApi';
 import useToast from '@/components/figleaf/toast/useToast';
 
@@ -23,28 +25,30 @@ const emit = defineEmits([
 ]);
 
 const { t } = useI18n();
-const $apiCreate = useApi('allowedStreet.create');
-const $apiUpdate = useApi('allowedStreet.update');
-const $apiRead = useApi('allowedStreet.read');
-const $apiSearch = useApi('allowedStreet.search');
+const $apiCreate = useApi('productType.create');
+const $apiUpdate = useApi('productType.update');
+const $apiRead = useApi('productType.read');
 const { successToast } = useToast();
-const appStore = useAppStore();
 
 const upsertModal = ref(null);
-const updateId: Ref<string | null> = ref(null);
+const updateId = ref(null);
 
 const form = reactive({
-    street_name: '',
-    active: true
+    name: '',
+    description: '',
+    ordinal: 1,
+    published: true
 });
 
-function getById(id: string) {
+function getById(id) {
     return $apiRead.tryCatch(
         async () => {
             const response = await $apiRead.run(id);
 
-            form.street_name = response.data?.street_name || '';
-            form.active = response.data?.active !== undefined ? response.data.active : true;
+            form.name = response.data?.name || '';
+            form.description = response.data?.description || '';
+            form.ordinal = response.data?.ordinal || 1;
+            form.published = response.data?.published !== undefined ? response.data.published : true;
 
             updateId.value = id;
         }
@@ -58,15 +62,15 @@ function onSubmit() {
     return api.tryCatch(
         async () => {
             await api.run({
-                ...formData
+                ...formData,
+                slug: form.slug || slugify(form.name, { lower: true, strict: true })
             });
 
             successToast({
-                title: t('Allowed street saved successfully')
+                title: t('Product type saved successfully')
             });
 
             hide();
-            appStore.updateAllowedStreetsState();
             emit('success');
         }
     );
@@ -79,8 +83,10 @@ function hide() {
 function resetData() {
     updateId.value = null;
 
-    form.street_name = '';
-    form.active = true;
+    form.name = '';
+    form.description = '';
+    form.ordinal = 1;
+    form.published = true;
 }
 
 function show(id) {
@@ -103,23 +109,30 @@ defineExpose({
         size="lg"
         ref="upsertModal">
         <template v-slot:header>
-            {{ updateId ? $t('Update allowed street') : $t('Create allowed street') }}
+            {{ updateId ? $t('Update product type') : $t('Create product type') }}
         </template>
 
         <fig-overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
             <fig-label-value-group display="block" density="md">
-                <!-- street name -->
+                <!-- name -->
                 <fig-label-value>
-                    <template v-slot:label>{{ $t('Street name') }}</template>
+                    <template v-slot:label>{{ $t('Name') }}</template>
                     <fig-form-input-text
-                        v-model="form.street_name" />
+                        v-model="form.name" />
                 </fig-label-value>
 
-                <!-- active -->
+                <!-- description -->
                 <fig-label-value>
-                    <template v-slot:label>{{ $t('Active') }}</template>
+                    <template v-slot:label>{{ $t('Description') }}</template>
+                    <fig-form-input-text
+                        v-model="form.description" />
+                </fig-label-value>
+
+                <!-- published -->
+                <fig-label-value>
+                    <template v-slot:label>{{ $t('Published') }}</template>
                     <fig-form-checkbox
-                        v-model="form.active"
+                        v-model="form.published"
                         binary />
                 </fig-label-value>
             </fig-label-value-group>
