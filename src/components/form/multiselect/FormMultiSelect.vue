@@ -77,7 +77,7 @@ watch(
     <MultiSelect
         v-model="selectedValue"
         @update:modelValue="onChange"
-        :noResultsText="$t('No results')"
+        :noResultsText="$t('No data')"
         :classes="tailwindClasses"
         :canDeselect="false"
         :searchable="true"
@@ -90,22 +90,36 @@ watch(
 
 <style>
 .fig-form-multiselect {
-    @apply relative mx-auto flex items-center justify-end box-border cursor-pointer text-base;
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    box-sizing: border-box;
+    cursor: pointer;
+    font-size: 1rem; /* Tailwind text-base = 1rem (16px) */
 }
 .fig-form-multiselect .multiselect-option {
-    @apply text-sm;
+    font-size: 0.875rem; /* Tailwind text-sm = 0.875rem (14px) */
 }
 .fig-form-multiselect .multiselect-tags-search,
 .fig-form-multiselect .multiselect-tags-search-wrapper {
-    @apply focus:outline-none outline-none focus:ring ring-transparent;
+    outline: none;
+    box-shadow: 0 0 0 0 transparent;
 }
 /* .fig-form-multiselect .multiselect-tags-search:focus {
     outline: none !important;
 } */
 
-
 .fig-form-multiselect-tag {
-    @apply bg-gray-300 text-gray-900 rounded-sm mr-1 flex items-center whitespace-nowrap;
+    background-color: rgb(209, 213, 219); /* Tailwind bg-gray-300 */
+    color: rgb(17, 24, 39); /* Tailwind text-gray-900 */
+    border-radius: 0.125rem; /* Tailwind rounded-sm = 2px */
+    margin-right: 0.25rem; /* Tailwind mr-1 = 4px */
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
 }
 
 .fig-form-multiselect--sm .multiselect-caret {

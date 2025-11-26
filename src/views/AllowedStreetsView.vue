@@ -16,8 +16,8 @@ import usePagination from '@/components/pagination/usePagination.js';
 // API - assume allowedStreet.search endpoint
 const $apiSearch = useApi('allowedStreet.search');
 const { setData, getPaginationApiParams } = usePagination();
-const { 
-    onSort, 
+const {
+    onSort,
     getSortApiParams,
     setTableResults,
     setTableTotalResultsCount,

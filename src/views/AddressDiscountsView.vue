@@ -15,6 +15,7 @@ import PaginationWrapper from '@/components/pagination/paginationWrapper/Paginat
 import FigFormat8601 from '@/components/format8601/Format8601.vue';
 import FigPopConfirm from '@/components/popConfirm/PopConfirm.vue';
 import AddressDiscountsUpsertModal from '@/components/addressDiscounts/AddressDiscountsUpsertModal.vue';
+import StreetNameDisplay from '@/components/allowedStreets/StreetNameDisplay.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
 import usePagination from '@/components/pagination/usePagination.js';
@@ -105,7 +106,7 @@ onMounted(() => {
                 <template #head>
                     <fig-tr>
                         <fig-th sort="street_number"class="text-left">{{ $t('Street number') }}</fig-th>
-                        <fig-th sort="street_name" class="text-left">{{ $t('Street name') }}</fig-th>
+                        <fig-th sort="allowed_street_id" class="text-left">{{ $t('Street name') }}</fig-th>
                         <fig-th sort="discount_percent" class="text-right">{{ $t('Discount') }}</fig-th>
                         <fig-th sort="active" class="text-left">{{ $t('Active') }}</fig-th>
                         <fig-th sort="created_at" class="text-left">{{ $t('Created') }}</fig-th>
@@ -121,7 +122,7 @@ onMounted(() => {
 
                     <!-- street name -->
                     <fig-td>
-                        {{ obj.street_name }}
+                        <street-name-display :id="obj.allowed_street_id" />
                     </fig-td>
 
                     <!-- Discount -->
@@ -149,7 +150,7 @@ onMounted(() => {
                                 variant="plain"
                                 iconOnly
                                 icon="edit"
-                                @click="upsertModal.show({ id: obj.id })" />
+                                @click="upsertModal.show(obj.id)" />
 
                             <fig-pop-confirm
                                 @confirm="deleteAddressDiscount(obj.id)">

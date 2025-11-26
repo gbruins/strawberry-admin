@@ -6,11 +6,13 @@ import ProductType from '@/api/product_type';
 import AllowedStreet from '@/api/allowed_street';
 import AddressDiscount from '@/api/address_discount';
 
+export let axiosInstance = null;
+
 export default {
     install: (app) => {
         const baseURL = import.meta.env.VITE_API_BASE_URL;
 
-        const axiosInstance = axios.create({
+        axiosInstance = axios.create({
             baseURL: baseURL,
             // withCredentials: true,
             headers: {
@@ -102,8 +104,8 @@ export default {
                     return utils.$get(singlePath, { id }, config);
                 },
 
-                update: (id, data, config) => {
-                    return utils.$put(singlePath, { id, ...data }, config);
+                update: (data, config) => {
+                    return utils.$put(singlePath, data, config);
                 },
 
                 delete: (id, config) => {
@@ -120,7 +122,7 @@ export default {
             addressDiscount: AddressDiscount(utils, axiosInstance),
             allowedStreet: AllowedStreet(utils, axiosInstance),
             product: Product(utils, axiosInstance),
-            productType: ProductType(utils, axiosInstance),
+            productType: ProductType(utils, axiosInstance)
         });
     }
 }
