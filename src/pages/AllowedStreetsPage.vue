@@ -1,21 +1,30 @@
 <script setup lang="ts">
 import  { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useAppStore } from '@/stores/app.js';
 import PageTitle from '@/components/layouts/PageTitle.vue';
 import FigTableSimple from '@/components/tableSimple/TableSimple.vue';
 import FigTh from '@/components/tableSimple/Th.vue';
 import FigTr from '@/components/tableSimple/Tr.vue';
 import FigTd from '@/components/tableSimple/Td.vue';
 import FigTrNoResults from '@/components/tableSimple/TrNoResults.vue';
+import FigPopConfirm from '@/components/popConfirm/PopConfirm.vue';
+import FigButton from '@/components/button/Button.vue';
 import Overlay from '@/components/overlay/Overlay.vue';
 import BooleanTag from '@/components/booleanTag/BooleanTag.vue';
 import PaginationWrapper from '@/components/pagination/paginationWrapper/PaginationWrapper.vue';
+import AllowedStreetsUpsertModal from '@/components/allowedStreets/AllowedStreetsUpsertModal.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
 import usePagination from '@/components/pagination/usePagination.js';
+import useToast from '@/components/toast/useToast';
 
-// API - assume allowedStreet.search endpoint
 const $apiSearch = useApi('allowedStreet.search');
+const $apiDelete = useApi('allowedStreet.delete');
+const { t } = useI18n();
+const { successToast } = useToast();
 const { setData, getPaginationApiParams } = usePagination();
+const appStore = useAppStore();
 const {
     onSort,
     getSortApiParams,
@@ -26,7 +35,9 @@ const {
     tableHasNoResults
 } = useTable();
 
-function getAllowedStreets() {
+const upsertModal = ref(null);
+
+function fetchData() {
     return $apiSearch.tryCatch(
         async () => {
             const response = await $apiSearch.run({
@@ -40,23 +51,46 @@ function getAllowedStreets() {
     );
 }
 
+function onDeleteItem(id: string) {
+    return $apiDelete.tryCatch(
+        async () => {
+            await $apiDelete.run(id);
+
+            successToast({
+                title: t('Item deleted successfully')
+            });
+
+            fetchData();
+            appStore.updateAllowedStreetsState();
+        }
+    );
+}
+
 function onTableSort(val) {
     onSort(val);
-    getAllowedStreets();
+    fetchData();
 }
 
 function onPaginationChange(data) {
     setData(data);
-    getAllowedStreets();
+    fetchData();
 }
 
 onMounted(() => {
-    getAllowedStreets();
+    fetchData();
 });
 </script>
 
 <template>
     <page-title>{{ $t('Allowed streets') }}</page-title>
+
+    <div class="mb-4 text-right">
+        <fig-button
+            variant="primary"
+            @click="upsertModal.show()">
+            {{ $t('Add allowed street') }}
+        </fig-button>
+    </div>
 
     <overlay :show="$apiSearch.isLoading.value">
         <pagination-wrapper
@@ -72,16 +106,41 @@ onMounted(() => {
                     <fig-tr>
                         <fig-th sort="street" class="text-left">{{ $t('Street name') }}</fig-th>
                         <fig-th sort="active" class="text-left">{{ $t('Active') }}</fig-th>
+                        <fig-th class="text-center">{{ $t('Actions') }}</fig-th>
                     </fig-tr>
                 </template>
 
                 <fig-tr v-for="(obj, idx) in tableResults" :key="idx">
+                    <!-- street name -->
                     <fig-td>
                         {{ obj.street_name }}
                     </fig-td>
 
+                    <!-- active -->
                     <fig-td>
                         <boolean-tag :value="obj.active" />
+                    </fig-td>
+
+                    <!-- actions -->
+                    <fig-td>
+                        <div class="flex items-center justify-center w-full gap-4">
+                            <fig-button
+                                variant="plain"
+                                iconOnly
+                                icon="edit"
+                                @click="upsertModal.show(obj.id)" />
+
+                            <fig-pop-confirm
+                                @confirm="onDeleteItem(obj.id)">
+                                <template v-slot:reference>
+                                    <fig-button
+                                        variant="danger"
+                                        iconOnly
+                                        icon="trash" />
+                                </template>
+                                {{ $t('Delete this item?') }}
+                            </fig-pop-confirm>
+                        </div>
                     </fig-td>
                 </fig-tr>
 
@@ -89,7 +148,8 @@ onMounted(() => {
             </fig-table-simple>
         </pagination-wrapper>
     </overlay>
-</template>
 
-<style>
-</style>
+    <allowed-streets-upsert-modal
+        ref="upsertModal"
+        @success="fetchData" />
+</template>

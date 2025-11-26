@@ -6,8 +6,10 @@ export default {
     'Actions': 'Actions',
     'Active': 'Active',
     'Add address discount': 'Add address discount',
+    'Add allowed street': 'Add allowed street',
     'Address discount saved successfully': 'Address discount saved successfully',
     'Address discounts': 'Address discounts',
+    'Allowed street saved successfully': 'Allowed street saved successfully',
     'Allowed streets': 'Allowed streets',
     'An unexpected error occurred.': 'An unexpected error occurred.',
 
@@ -15,6 +17,7 @@ export default {
 
     'cancel': 'cancel',
     'Create address discount': 'Create address discount',
+    'Create allowed street': 'Create allowed street',
     'Created': 'Created',
 
     'Delete this item?': 'Delete this item?',
@@ -53,6 +56,7 @@ export default {
     'true': 'true',
 
     'Update address discount': 'Update address discount',
+    'Update allowed street': 'Update allowed street',
 
     // Date formatting
     'date.format.mdy': 'dd/LLL/yy',

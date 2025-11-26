@@ -25,7 +25,6 @@ const $apiSearch = useApi('addressDiscount.search');
 const $apiDelete = useApi('addressDiscount.delete');
 const { t } = useI18n();
 const { successToast } = useToast();
-
 const { setData, getPaginationApiParams } = usePagination();
 const {
     onSort,
@@ -53,7 +52,7 @@ function fetchData() {
     );
 }
 
-function deleteAddressDiscount(id: number) {
+function onDeleteItem(id: string) {
     return $apiDelete.tryCatch(
         async () => {
             await $apiDelete.run(id);
@@ -153,7 +152,7 @@ onMounted(() => {
                                 @click="upsertModal.show(obj.id)" />
 
                             <fig-pop-confirm
-                                @confirm="deleteAddressDiscount(obj.id)">
+                                @confirm="onDeleteItem(obj.id)">
                                 <template v-slot:reference>
                                     <fig-button
                                         variant="danger"
@@ -175,6 +174,3 @@ onMounted(() => {
         ref="upsertModal"
         @success="fetchData" />
 </template>
-
-<style>
-</style>
