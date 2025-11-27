@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { RouterLink } from 'vue-router';
 import { useAppStore } from '@/stores/app.js';
@@ -8,10 +8,12 @@ import FigDropdown from '@/components/figleaf/dropdown/Dropdown.vue';
 import FigDropdownButton from '@/components/figleaf/dropdown/DropdownButton.vue';
 import FigButton from '@/components/figleaf/button/Button.vue';
 import useApi from '@/composables/useApi';
+import useBroadcastChannels from '@/composables/useBroadcastChannels';
 
 const $apiLogout = useApi('auth.logout');
 const appStore = useAppStore();
 const router = useRouter();
+const { getLogoutChannel } = useBroadcastChannels();
 
 const sidebarOpened = ref(true);
 
@@ -25,16 +27,30 @@ function onUserMenuSelected(value) {
     }
 }
 
+function onLogout() {
+    appStore.loggedInUser = null;
+    router.push({ name: 'login' });
+}
+
 function logout() {
     return $apiLogout.tryCatch(
         async () => {
-            const response = await $apiLogout.run();
-
-            appStore.loggedInUser = null;
-            router.push({ name: 'login' });
+            await $apiLogout.run();
+            onLogout();
         }
     );
 }
+
+onMounted(() => {
+    const logoutChannel = getLogoutChannel();
+
+    logoutChannel.onmessage = (event) => {
+        // console.log('Received message on logout channel:', event.data);
+        if (event.data?.type === 'logout') {
+            onLogout();
+        }
+    };
+});
 </script>
 
 <template>
@@ -53,6 +69,11 @@ function logout() {
                 </div>
 
                 <div class="grow px-2">
+                    <router-link
+                        class="nav-item-main"
+                        active-class="nav-item-main--active"
+                        :to="{ name: 'dashboard' }">{{ $t('Dashboard') }}</router-link>
+
                     <router-link
                         class="nav-item-main"
                         active-class="nav-item-main--active"

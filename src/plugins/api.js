@@ -6,8 +6,11 @@ import Product from '@/api/product';
 import ProductType from '@/api/product_type';
 import AllowedStreet from '@/api/allowed_street';
 import AddressDiscount from '@/api/address_discount';
+import useBroadcastChannels from '@/composables/useBroadcastChannels';
 
 export let axiosInstance = null;
+
+const { getLogoutChannel, postToChannel } = useBroadcastChannels();
 
 export default {
     install: (app) => {
@@ -136,8 +139,7 @@ export default {
                     switch (errorCode) {
                         case 401:
                             console.error('Unauthorized');
-                            console.error(error.response);
-                            window.location = '/login';
+                            postToChannel({ type: 'logout' }, getLogoutChannel());
                             break;
                     }
                 }

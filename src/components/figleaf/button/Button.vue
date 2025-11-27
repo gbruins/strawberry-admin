@@ -109,7 +109,7 @@ const iconStrokeColor = computed(() => {
         tabindex="0"
         :disabled="isDisabled"
         :aria-disabled="isDisabled">
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1 w-full">
             <div v-if="props.icon" class="shrink-0">
                 <svg-icon
                     :icon="props.icon"
@@ -124,7 +124,8 @@ const iconStrokeColor = computed(() => {
                 :class="{
                     'uppercase': props.uppercase,
                     'opacity-20': props.loading,
-                    'flex justify-center w-full font-medium': true
+                    'text-center': props.block,
+                    'flex justify-center w-full font-medium font-medium': true
                 }"><slot></slot>
             </div>
             <div
@@ -146,6 +147,7 @@ const iconStrokeColor = computed(() => {
     align-items: center;
     position: relative;
     border: 1px solid transparent;
+    font-weight: 600;
     transition: background-color 0.2s ease-in-out;
 }
 .fig-button:not(.fig-icon-button) {

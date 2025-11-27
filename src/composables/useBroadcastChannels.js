@@ -1,16 +1,17 @@
 
 export default function useBroadcastChannels() {
 
-    function getAllowedStreetsChannel() {
-        return new BroadcastChannel('allowed_streets_channel');
+    function getLogoutChannel() {
+        return new BroadcastChannel('logout_channel');
     }
 
-    function postToAllowedStreetsChannel(data, channel) {
+    function postToChannel(data, channel) {
+        console.log('Posting to channel:', channel, data);
         channel.postMessage(data);
     }
 
     return {
-        getAllowedStreetsChannel,
-        postToAllowedStreetsChannel
+        getLogoutChannel,
+        postToChannel
     }
 }

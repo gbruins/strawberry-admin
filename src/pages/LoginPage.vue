@@ -65,7 +65,7 @@ function onSubmit() {
                         size="md"
                         block
                         :disabled="!buttonIsEnabled">
-                        <div class="text-center">{{ $t('Login') }}</div>
+                        {{ $t('Login') }}
                     </fig-button>
                 </div>
             </form>
