@@ -31,6 +31,13 @@ const router = createRouter({
         },
 
         {
+            path: '/logout',
+            name: 'logout',
+            meta: { layout: BlankLayout },
+            component: () => import('@/pages/LogoutPage.vue'),
+        },
+
+        {
             path: '/products',
             name: 'products',
             component: () => import('@/pages/ProductsPage.vue'),

@@ -31,12 +31,10 @@ function onSubmit() {
                 ...form
             });
 
-            appStore.isLoggedIn = true;
             appStore.loggedInUser = response.data.username;
             router.push({ name: 'dashboard' });
         },
         () => {
-            appStore.isLoggedIn = false;
             appStore.loggedInUser = null;
         }
     );

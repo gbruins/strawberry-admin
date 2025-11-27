@@ -30,9 +30,7 @@ function logout() {
         async () => {
             const response = await $apiLogout.run();
 
-            appStore.isLoggedIn = false;
             appStore.loggedInUser = null;
-
             router.push({ name: 'login' });
         }
     );

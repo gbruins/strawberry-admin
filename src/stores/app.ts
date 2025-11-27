@@ -4,7 +4,6 @@ import { axiosInstance } from '@/plugins/api';
 
 export const useAppStore = defineStore('appStore', () => {
     const loggedInUser = ref(null);
-    const isLoggedIn = ref(false);
     const allowedStreets = ref([]);
     const productTypes = ref([]);
 
