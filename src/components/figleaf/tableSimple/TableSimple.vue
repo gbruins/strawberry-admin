@@ -42,9 +42,9 @@ const props = defineProps({
         type: String
     },
 
-    defaultSortAsc: {
+    defaultSortDesc: {
         type: Boolean,
-        default: false
+        default: true
     }
 });
 
@@ -55,7 +55,7 @@ const emit = defineEmits([
 const sharedState = reactive({
     sort: {
         by: props.defaultSortBy || '',
-        isAsc: props.defaultSortAsc
+        isDesc: props.defaultSortDesc
     },
     ...props
 });
@@ -75,7 +75,7 @@ const tableClasses = computed(() => {
 function emitSort() {
     emit('sort', {
         by: sharedState.sort.by,
-        isAsc: sharedState.sort.isAsc
+        isDesc: sharedState.sort.isDesc
     })
 }
 

@@ -22,7 +22,7 @@ const tableState = inject('tableState');
 function emitSort() {
     emit('sort', {
         by: tableState.sort.by,
-        isAsc: tableState.sort.isAsc
+        isDesc: tableState.sort.isDesc
     });
 }
 
@@ -34,8 +34,8 @@ const classNames = computed(() => {
     return {
         'fig-table-th-sortable': props.sort,
         'fig-table-th-sort-active': props.sort && isSelected.value,
-        'fig-table-th-sort-asc': props.sort && isSelected.value && tableState.sort.isAsc,
-        'fig-table-th-sort-desc': props.sort && isSelected.value && !tableState.sort.isAsc
+        'fig-table-th-sort-asc': props.sort && isSelected.value && !tableState.sort.isDesc,
+        'fig-table-th-sort-desc': props.sort && isSelected.value && tableState.sort.isDesc
     }
 });
 
@@ -68,14 +68,14 @@ const arrowClasses = computed(() => {
 
     return {
         'transition-transform duration-500': selected,
-        'fig-table-th-arrow-down': selected && !tableState.sort.isAsc
+        'fig-table-th-arrow-down': selected && tableState.sort.isDesc
     }
 });
 
 const onClick = debounce(
     () => {
         if(props.sort) {
-            tableState.sort.isAsc = isSelected.value ? !tableState.sort.isAsc : tableState.defaultSortAsc;
+            tableState.sort.isDesc = isSelected.value ? !tableState.sort.isDesc : tableState.defaultSortDesc;
             tableState.sort.by = props.sort;
             emitSort()
         }

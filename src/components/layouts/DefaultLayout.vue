@@ -1,12 +1,41 @@
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { RouterLink } from 'vue-router';
+import { useAppStore } from '@/stores/app.js';
 import FigSvgIcon from '@/components/figleaf/svgIcon/SvgIcon.vue';
+import FigDropdown from '@/components/figleaf/dropdown/Dropdown.vue';
+import FigDropdownButton from '@/components/figleaf/dropdown/DropdownButton.vue';
+import FigButton from '@/components/figleaf/button/Button.vue';
+import useApi from '@/composables/useApi';
+
+const $apiLogout = useApi('auth.logout');
+const appStore = useAppStore();
+const router = useRouter();
 
 const sidebarOpened = ref(true);
 
 function toggleSidebar() {
     sidebarOpened.value = !sidebarOpened.value;
+}
+
+function onUserMenuSelected(value) {
+    if (value === 'logout') {
+        logout();
+    }
+}
+
+function logout() {
+    return $apiLogout.tryCatch(
+        async () => {
+            const response = await $apiLogout.run();
+
+            appStore.isLoggedIn = false;
+            appStore.loggedInUser = null;
+
+            router.push({ name: 'login' });
+        }
+    );
 }
 </script>
 
@@ -74,14 +103,17 @@ function toggleSidebar() {
             <header class="layout-header">
                 <div id="layout-header-title"></div>
                 <div>
-                    <!-- <nuxt-link
-                        v-if="!isLoggedIn"
-                        :to="{ name: 'tenantmember-login' }"
-                        tag="a">{{ $t('Login') }}</nuxt-link> -->
-
-                    <!-- <a
-                        v-else
-                        @click="logout">Logout</a> -->
+                    <fig-dropdown
+                        v-if="appStore.loggedInUser"
+                        @selected="onUserMenuSelected">
+                        <template v-slot:toggler>
+                            <fig-button
+                                variant="ghost"
+                                :uppercase="false"
+                                size="sm">{{ appStore.loggedInUser }}</fig-button>
+                        </template>
+                        <fig-dropdown-button value="logout">{{ $t('Logout') }}</fig-dropdown-button>
+                    </fig-dropdown>
                 </div>
             </header>
 

@@ -178,7 +178,7 @@ defineExpose({
         </fig-overlay>
 
         <template v-slot:footer>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 w-full justify-center">
                 <fig-button
                     variant="primary"
                     @click="onSubmit">{{ $t('Submit') }}</fig-button>

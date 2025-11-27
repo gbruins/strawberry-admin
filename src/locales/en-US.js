@@ -25,6 +25,7 @@ export default {
     'Create product type': 'Create product type',
     'Created': 'Created',
 
+    'Dashboard': 'Dashboard',
     'Delete this item?': 'Delete this item?',
     'Description': 'Description',
     'Discount': 'Discount',
@@ -35,15 +36,18 @@ export default {
 
     'false': 'false',
 
+    'Invalid username or password': 'Invalid username or password',
     'Item deleted successfully': 'Item deleted successfully',
 
     'Login': 'Login',
+    'Logout': 'Logout',
 
     'Name': 'Name',
     'No data': 'No data',
 
     'OK': 'OK',
 
+    'Password': 'Password',
     'Price': 'Price',
     'Product saved successfully': 'Product saved successfully',
     'Product type': 'Product type',
@@ -69,6 +73,7 @@ export default {
     'Update allowed street': 'Update allowed street',
     'Update product': 'Update product',
     'Update product type': 'Update product type',
+    'Username': 'Username',
 
     // Date formatting
     'date.format.mdy': 'dd/LLL/yy',

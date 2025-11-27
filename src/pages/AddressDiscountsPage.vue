@@ -37,6 +37,7 @@ const {
 } = useTable();
 
 const upsertModal = ref(null);
+const defaultSort = { by: 'discount_percent', isDesc: true };
 
 function fetchData() {
     return $apiSearch.tryCatch(
@@ -77,6 +78,7 @@ function onPaginationChange(data: any) {
 }
 
 onMounted(() => {
+    onSort(defaultSort);
     fetchData();
 });
 </script>
@@ -101,7 +103,9 @@ onMounted(() => {
             <fig-table-simple
                 striped
                 hover
-                @sort="onTableSort">
+                @sort="onTableSort"
+                :default-sort-by="defaultSort.by"
+                :default-sort-desc="defaultSort.isDesc">
                 <template #head>
                     <fig-tr>
                         <fig-th sort="street_number"class="text-left">{{ $t('Street number') }}</fig-th>

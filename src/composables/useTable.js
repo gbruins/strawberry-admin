@@ -12,7 +12,7 @@ export default () => {
 
     function onSort(val) {
         sortBy.value = val?.by || null;
-        sortDir.value = val.isAsc ? 'asc' : 'desc';
+        sortDir.value = val.isDesc ? 'desc' : 'asc';
     }
 
     function getSortApiParams() {
@@ -49,5 +49,5 @@ export default () => {
         tableHasNoResults,
         tableResults,
         tableTotalResultsCount
-    };  
+    };
 }

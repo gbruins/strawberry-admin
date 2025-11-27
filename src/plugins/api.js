@@ -1,6 +1,7 @@
 import axios from 'axios';
 import qs from 'qs';
 import isObject from 'lodash.isobject';
+import Auth from '@/api/auth';
 import Product from '@/api/product';
 import ProductType from '@/api/product_type';
 import AllowedStreet from '@/api/allowed_street';
@@ -14,7 +15,7 @@ export default {
 
         axiosInstance = axios.create({
             baseURL: baseURL,
-            // withCredentials: true,
+            withCredentials: true, // Send cookies with requests
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -121,8 +122,28 @@ export default {
         app.provide('$api', {
             addressDiscount: AddressDiscount(utils, axiosInstance),
             allowedStreet: AllowedStreet(utils, axiosInstance),
+            auth: Auth(utils, axiosInstance),
             product: Product(utils, axiosInstance),
             productType: ProductType(utils, axiosInstance)
         });
+
+        axiosInstance.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response) {
+                    const errorCode = parseInt(error?.response?.status, 10);
+
+                    switch (errorCode) {
+                        case 401:
+                            console.error('Unauthorized');
+                            console.error(error.response);
+                            window.location = '/login';
+                            break;
+                    }
+                }
+
+                return Promise.reject(error);
+            }
+        );
     }
 }
