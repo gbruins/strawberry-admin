@@ -32,6 +32,8 @@ function onSubmit() {
             });
 
             appStore.loggedInUser = response.data.username;
+            appStore.updateAllowedStreetsState();
+            appStore.updateProductTypesState();
             router.push({ name: 'dashboard' });
         },
         () => {
