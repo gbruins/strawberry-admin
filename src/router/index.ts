@@ -38,6 +38,18 @@ const router = createRouter({
         },
 
         {
+            path: '/carts',
+            name: 'carts',
+            component: () => import('@/pages/CartsPage.vue'),
+        },
+
+        {
+            path: '/cart/:id',
+            name: 'cart',
+            component: () => import('@/pages/CartPage.vue'),
+        },
+
+        {
             path: '/products',
             name: 'products',
             component: () => import('@/pages/ProductsPage.vue'),
@@ -47,6 +59,12 @@ const router = createRouter({
             path: '/product-types',
             name: 'product_types',
             component: () => import('@/pages/ProductTypesPage.vue'),
+        },
+
+        {
+            path: '/services',
+            name: 'services',
+            component: () => import('@/pages/ServicesPage.vue'),
         },
     ]
 })

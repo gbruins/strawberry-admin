@@ -99,6 +99,7 @@ watch(
     box-sizing: border-box;
     cursor: pointer;
     font-size: 1rem; /* Tailwind text-base = 1rem (16px) */
+    width: 100%;
 }
 .fig-form-multiselect .multiselect-option {
     font-size: 0.875rem; /* Tailwind text-sm = 0.875rem (14px) */

@@ -1,40 +1,58 @@
 export default {
+    '# items': '# items',
+
     '{num} / page': '{num} / page',
     '{num} files selected': '{num} files selected',
+    '{num} items': '{num} item | {num} items',
     '{num} result | {num} results': '{num} result | {num} results',
 
     'Actions': 'Actions',
     'Active': 'Active',
     'Add address discount': 'Add address discount',
     'Add allowed street': 'Add allowed street',
+    'Add note': 'Add note',
     'Add product': 'Add product',
     'Add product type': 'Add product type',
+    'Add service': 'Add service',
     'Address discount saved successfully': 'Address discount saved successfully',
     'Address discounts': 'Address discounts',
     'Allowed street saved successfully': 'Allowed street saved successfully',
     'Allowed streets': 'Allowed streets',
     'An unexpected error occurred.': 'An unexpected error occurred.',
+    'Apply filters': 'Apply filters',
 
     'Base price': 'Base price',
+    'Billing': 'Billing',
+    'Billing address': 'Billing address',
     'Browse': 'Browse',
 
     'cancel': 'cancel',
+    'Cart': 'Cart',
+    'Cart items': 'Cart items',
+    'Cart status': 'Cart status',
+    'Carts': 'Carts',
+    'Closed': 'Closed',
     'Create address discount': 'Create address discount',
     'Create allowed street': 'Create allowed street',
     'Create product': 'Create product',
     'Create product type': 'Create product type',
+    'Create service': 'Create service',
     'Created': 'Created',
 
     'Dashboard': 'Dashboard',
     'Delete this item?': 'Delete this item?',
+    'Delete this row?': 'Delete this row?',
     'Description': 'Description',
     'Discount': 'Discount',
     'Discount percentage': 'Discount percentage',
     'Displaying {start} - {end}': 'Displaying {start} - {end}',
+    'Dough count': 'Dough count',
 
     'Error': 'Error',
 
     'false': 'false',
+
+    'Grand total': 'Grand total',
 
     'Invalid username or password': 'Invalid username or password',
     'Item deleted successfully': 'Item deleted successfully',
@@ -42,13 +60,22 @@ export default {
     'Login': 'Login',
     'Logout': 'Logout',
 
+    'must be after "Start at"': 'must be after "Start at"',
+    'must be at least {min}': 'must be at least {min}',
+
     'Name': 'Name',
     'No data': 'No data',
+    'Notes': 'Notes',
+    'Notes updated successfully': 'Notes updated successfully',
 
     'OK': 'OK',
+    'Open': 'Open',
 
     'Password': 'Password',
+    'Payment': 'Payment',
+    'Payment method': 'Payment method',
     'Price': 'Price',
+    'Product': 'Product',
     'Product saved successfully': 'Product saved successfully',
     'Product type': 'Product type',
     'Product type saved successfully': 'Product type saved successfully',
@@ -56,15 +83,26 @@ export default {
     'Products': 'Products',
     'Published': 'Published',
 
+    'Quantity': 'Quantity',
+
+    'required': 'required',
+
+    'Save notes': 'Save notes',
     'See all tax codes': 'See all tax codes',
     'See common tax codes': 'See common tax codes',
-
+    'Service': 'Service',
+    'Service saved successfully': 'Service saved successfully',
+    'Status': 'Status',
     'Street name': 'Street name',
     'Street number': 'Street number',
+    'Stripe details': 'Stripe details',
     'Stripe price ID': 'Stripe price ID',
     'Stripe product ID': 'Stripe product ID',
     'Submit': 'Submit',
+    'Subtotal': 'Subtotal',
+    'Success': 'Success',
 
+    'Tax': 'Tax',
     'Title': 'Title',
     'Type': 'Type',
     'true': 'true',
@@ -73,7 +111,11 @@ export default {
     'Update allowed street': 'Update allowed street',
     'Update product': 'Update product',
     'Update product type': 'Update product type',
+    'Update service': 'Update service',
     'Username': 'Username',
+
+    'View': 'View',
+    'view raw data': 'view raw data',
 
     // Date formatting
     'date.format.mdy': 'dd/LLL/yy',

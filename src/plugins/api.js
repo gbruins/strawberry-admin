@@ -6,6 +6,8 @@ import Product from '@/api/product';
 import ProductType from '@/api/product_type';
 import AllowedStreet from '@/api/allowed_street';
 import AddressDiscount from '@/api/address_discount';
+import Cart from '@/api/cart';
+import Service from '@/api/service';
 import useBroadcastChannels from '@/composables/useBroadcastChannels';
 
 export let axiosInstance = null;
@@ -30,8 +32,8 @@ export default {
         utils.get = (url, params, config) => {
             const cfg = {
                 paramsSerializer: (parameters) => {
-                    return qs.stringify(parameters, { indices: false });
-                    // return qs.stringify(parameters, { arrayFormat: 'brackets' });
+                    // return qs.stringify(parameters, { indices: false });
+                    return qs.stringify(parameters, { arrayFormat: 'brackets' });
                 },
                 ...config
             }
@@ -126,8 +128,10 @@ export default {
             addressDiscount: AddressDiscount(utils, axiosInstance),
             allowedStreet: AllowedStreet(utils, axiosInstance),
             auth: Auth(utils, axiosInstance),
+            cart: Cart(utils, axiosInstance),
             product: Product(utils, axiosInstance),
-            productType: ProductType(utils, axiosInstance)
+            productType: ProductType(utils, axiosInstance),
+            service: Service(utils, axiosInstance)
         });
 
         axiosInstance.interceptors.response.use(

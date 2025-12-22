@@ -10,8 +10,8 @@ import { useI18n } from 'vue-i18n';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import FormText from '../text/FormText.vue';
-import useDate from '../../../composables/useDate.js';
+import FormText from '@/components/figleaf/form/text/FormText.vue';
+import useDate from '@/composables/useDate.js';
 
 const props = defineProps({
     modelValue: {
@@ -76,7 +76,8 @@ let Pickr = null;
 function zonedTimeToUtcWithoutZ(date) {
     if (date) {
         if (isDateObject(date)) {
-            date = fromZonedTime(date, props.timezone).toISOString().replace('Z', '');
+            // date = fromZonedTime(date, props.timezone).toISOString().replace('Z', '');
+            date = fromZonedTime(date, props.timezone).toISOString();
         }
 
         return updateSecondsOfIso8601(date, props.inclusiveSeconds ? 59 : 0);
@@ -228,7 +229,15 @@ watch(
 watch(
     () => props.modelValue,
     (newVal) => {
-        selectedDate.value = newVal ? convertIsoDateToTimezone(newVal, props.timezone) : null;
+        // selectedDate.value = newVal ? convertIsoDateToTimezone(newVal, props.timezone) : null;
+        selectedDate.value = newVal;
+        console.log('props.modelValue changed:', newVal, selectedDate.value);
+
+        if (!Pickr) {
+            return;
+        }
+
+        Pickr.setDate(newVal, false);
 
         // newVal may be a timestamp with a seconds value.
         // Emitting here so the client can have the correct value
