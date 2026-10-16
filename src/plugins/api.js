@@ -8,6 +8,7 @@ import AllowedStreet from '@/api/allowed_street';
 import AddressDiscount from '@/api/address_discount';
 import Cart from '@/api/cart';
 import Service from '@/api/service';
+import ServiceMenu from '@/api/service_menu';
 import useBroadcastChannels from '@/composables/useBroadcastChannels';
 
 export let axiosInstance = null;
@@ -131,7 +132,8 @@ export default {
             cart: Cart(utils, axiosInstance),
             product: Product(utils, axiosInstance),
             productType: ProductType(utils, axiosInstance),
-            service: Service(utils, axiosInstance)
+            service: Service(utils, axiosInstance),
+            serviceMenu: ServiceMenu(utils, axiosInstance)
         });
 
         axiosInstance.interceptors.response.use(

@@ -9,7 +9,7 @@ import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
-import { fromZonedTime, toZonedTime } from 'date-fns-tz';
+import { fromZonedTime, toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import FormText from '@/components/figleaf/form/text/FormText.vue';
 import useDate from '@/composables/useDate.js';
 
@@ -33,7 +33,7 @@ const props = defineProps({
     timezone: {
         type: String,
         default: () => {
-            return Intl.DateTimeFormat().resolvedOptions().timeZone;
+            return 'America/Los_Angeles';
         }
     },
 
@@ -123,10 +123,10 @@ function getConfig() {
                     ? t('date.format.mdy')
                     : t('date.format.mdy_hm');
 
+                // flatpickr dates already hold the wall-clock time in props.timezone
                 const formatted = format8601(
                     dateTo8601(date),
-                    dateFormat,
-                    props.timezone
+                    dateFormat
                 );
 
                 return formatted;
@@ -231,13 +231,16 @@ watch(
     (newVal) => {
         // selectedDate.value = newVal ? convertIsoDateToTimezone(newVal, props.timezone) : null;
         selectedDate.value = newVal;
-        console.log('props.modelValue changed:', newVal, selectedDate.value);
 
         if (!Pickr) {
             return;
         }
 
-        Pickr.setDate(newVal, false);
+        // show the stored instant as wall-clock time in props.timezone
+        Pickr.setDate(
+            newVal ? formatInTimeZone(new Date(newVal), props.timezone, "yyyy-MM-dd'T'HH:mm:ss") : newVal,
+            false
+        );
 
         // newVal may be a timestamp with a seconds value.
         // Emitting here so the client can have the correct value

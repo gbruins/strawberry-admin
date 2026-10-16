@@ -1,4 +1,4 @@
-import { toZonedTime, getTimezoneOffset } from "date-fns-tz";
+import { toZonedTime, getTimezoneOffset, formatInTimeZone } from "date-fns-tz";
 import { useI18n } from "vue-i18n";
 
 export default function useDate() {
@@ -152,7 +152,7 @@ export default function useDate() {
         }
 
         if (timezone) {
-            iso8601 = dateObjectToZonedDateObject(new Date(iso8601), timezone).toISOString();
+            iso8601 = formatInTimeZone(new Date(iso8601), timezone, "yyyy-MM-dd'T'HH:mm:ss");
         }
 
         const format = dateFormat || t('date.format.mdy_hm');

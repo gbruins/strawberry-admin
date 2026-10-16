@@ -50,6 +50,10 @@ export default {
     'Discount percentage': 'Discount percentage',
     'Displaying {start} - {end}': 'Displaying {start} - {end}',
     'Dough count': 'Dough count',
+    'Menu': 'Menu',
+    'No menu': 'No menu',
+    'Max per order': 'Max per order',
+    'Max pizzas per order': 'Max pizzas per order',
 
     'Error': 'Error',
 

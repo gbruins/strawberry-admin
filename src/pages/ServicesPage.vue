@@ -19,6 +19,8 @@ import usePagination from '@/components/figleaf/pagination/usePagination.js';
 import useToast from '@/components/figleaf/toast/useToast';
 
 const $apiSearch = useApi('service.search');
+const $apiMenus = useApi('serviceMenu.search');
+const menuTitles = ref<Record<string, string>>({});
 const $apiDelete = useApi('service.delete');
 const { t } = useI18n();
 const { successToast } = useToast();
@@ -35,6 +37,15 @@ const {
 
 const upsertModal = ref(null);
 const defaultSort = { by: 'start_at', isDesc: true };
+
+function fetchMenus() {
+    return $apiMenus.tryCatch(
+        async () => {
+            const response = await $apiMenus.run({ _pageSize: 500 });
+            menuTitles.value = Object.fromEntries((response.data || []).map((m) => [m.id, m.title]));
+        }
+    );
+}
 
 function fetchData() {
     return $apiSearch.tryCatch(
@@ -76,6 +87,7 @@ function onPaginationChange(data) {
 
 onMounted(() => {
     onSort(defaultSort);
+    fetchMenus();
     fetchData();
 });
 </script>
@@ -108,6 +120,8 @@ onMounted(() => {
                         <fig-th sort="start_at" class="text-left">{{ $t('Start at') }}</fig-th>
                         <fig-th sort="end_at" class="text-left">{{ $t('End at') }}</fig-th>
                         <fig-th class="text-left">{{ $t('Notes') }}</fig-th>
+                        <fig-th class="text-left">{{ $t('Menu') }}</fig-th>
+                        <fig-th class="text-right">{{ $t('Max per order') }}</fig-th>
                         <fig-th sort="inventory_count" class="text-right">{{ $t('Dough count') }}</fig-th>
                         <fig-th>{{ $t('Actions') }}</fig-th>
                     </fig-tr>
@@ -127,6 +141,16 @@ onMounted(() => {
                     <!-- notes -->
                     <fig-td>
                         {{ obj.notes }}
+                    </fig-td>
+
+                    <!-- menu -->
+                    <fig-td>
+                        {{ menuTitles[obj.service_menu_id] || '' }}
+                    </fig-td>
+
+                    <!-- max_per_order -->
+                    <fig-td class="text-right">
+                        {{ obj.max_per_order }}
                     </fig-td>
 
                     <!-- dough_count -->

@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, reactive, type Ref } from 'vue';
+import { ref, reactive, onMounted, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minValue } from '@vuelidate/validators';
@@ -16,6 +16,7 @@ import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
 import FigButton from '@/components/figleaf/button/Button.vue';
 import FigModal from '@/components/figleaf/modal/Modal.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import FigFormSelectNative from '@/components/figleaf/form/selectNative/FormSelectNative.vue';
 import FigFormInputDate from '@/components/figleaf/form/date/FormInputDate.vue';
 import useApi from '@/composables/useApi';
 import useToast from '@/components/figleaf/toast/useToast';
@@ -28,7 +29,8 @@ const { t } = useI18n();
 const $apiCreate = useApi('service.create');
 const $apiUpdate = useApi('service.update');
 const $apiRead = useApi('service.read');
-const $apiSearch = useApi('service.search');
+const $apiMenus = useApi('serviceMenu.search');
+const menuOptions: Ref<{ value: string | null, label: string }[]> = ref([]);
 const { successToast } = useToast();
 
 const upsertModal = ref(null);
@@ -39,6 +41,8 @@ const form = reactive({
     end_at: null,
     notes: '',
     inventory_count: 0,
+    service_menu_id: null as string | null,
+    max_per_order: 4,
 });
 
 const validationRules = {
@@ -55,9 +59,27 @@ const validationRules = {
     },
     notes: { },
     inventory_count: { required, minValue: minValue(1) },
+    max_per_order: { required, minValue: minValue(1) },
 };
 
 const v$ = useVuelidate(validationRules, form);
+
+function loadMenus() {
+    return $apiMenus.tryCatch(
+        async () => {
+            const response = await $apiMenus.run({ _pageSize: 500, _sort: 'title' });
+
+            menuOptions.value = [
+                { value: null, label: t('No menu') },
+                ...(response.data || [])
+                    .filter((m) => m.published)
+                    .map((m) => ({ value: m.id, label: m.title }))
+            ];
+        }
+    );
+}
+
+onMounted(loadMenus);
 
 function getById(id: string) {
     return $apiRead.tryCatch(
@@ -68,6 +90,8 @@ function getById(id: string) {
             form.end_at = response.data?.end_at || null;
             form.notes = response.data?.notes || '';
             form.inventory_count = response.data?.inventory_count || 0;
+            form.service_menu_id = response.data?.service_menu_id || null;
+            form.max_per_order = response.data?.max_per_order || 4;
 
             updateId.value = id;
         }
@@ -114,6 +138,8 @@ function resetData() {
     form.end_at = null;
     form.notes = '';
     form.inventory_count = 0;
+    form.service_menu_id = null;
+    form.max_per_order = 4;
 }
 
 function show(id) {
@@ -186,6 +212,30 @@ defineExpose({
                     <template v-slot:error>
                         <div v-if="v$.inventory_count.required.$invalid">{{ $t('required') }}</div>
                         <div v-else-if="v$.inventory_count.minValue.$invalid">{{ $t('must be at least {min}', { min: 1 }) }}</div>
+                    </template>
+                </fig-label-value>
+
+                <!-- menu -->
+                <fig-label-value>
+                    <template v-slot:label>{{ $t('Menu') }}</template>
+
+                    <fig-form-select-native
+                        v-model="form.service_menu_id"
+                        :options="menuOptions" />
+                </fig-label-value>
+
+                <!-- max per order -->
+                <fig-label-value>
+                    <template v-slot:label>{{ $t('Max pizzas per order') }}</template>
+
+                    <fig-form-input-number
+                        v-model="form.max_per_order"
+                        :min="1"
+                        :step="1" />
+
+                    <template v-slot:error>
+                        <div v-if="v$.max_per_order.required.$invalid">{{ $t('required') }}</div>
+                        <div v-else-if="v$.max_per_order.minValue.$invalid">{{ $t('must be at least {min}', { min: 1 }) }}</div>
                     </template>
                 </fig-label-value>
             </fig-label-value-group>

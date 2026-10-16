@@ -28,7 +28,7 @@ const formattedDate = computed(() => {
     return format8601(
         props.date,
         props.format,
-        props.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+        props.timezone || 'America/Los_Angeles'
     );
 });
 </script>
