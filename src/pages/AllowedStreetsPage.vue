@@ -21,6 +21,7 @@ import useToast from '@/components/figleaf/toast/useToast';
 
 const $apiSearch = useApi('allowedStreet.search');
 const $apiDelete = useApi('allowedStreet.delete');
+const $apiUpdate = useApi('allowedStreet.update');
 const { t } = useI18n();
 const { successToast } = useToast();
 const { setData, getPaginationApiParams } = usePagination();
@@ -67,6 +68,23 @@ function onDeleteItem(id: string) {
     );
 }
 
+function toggleActive(allowedStreet) {
+    return $apiUpdate.tryCatch(
+        async () => {
+            await $apiUpdate.run({
+                id: allowedStreet.id,
+                active: !allowedStreet.active
+            });
+
+            successToast({
+                title: t(!allowedStreet.active ? 'Deactivated: {name}' : 'Activated: {name}', { name: allowedStreet.street_name })
+            });
+
+            appStore.updateAllowedStreetsState();
+            fetchData();}
+    );
+}
+
 function onTableSort(val) {
     onSort(val);
     fetchData();
@@ -86,6 +104,7 @@ onMounted(() => {
 <template>
     <page-title>{{ $t('Allowed streets') }}</page-title>
 
+<!--
     <div class="mb-4 text-right">
         <fig-button
             variant="primary"
@@ -93,6 +112,7 @@ onMounted(() => {
             {{ $t('Add allowed street') }}
         </fig-button>
     </div>
+-->
 
     <fig-overlay :show="$apiSearch.isLoading.value">
         <fig-pagination-wrapper
@@ -129,12 +149,16 @@ onMounted(() => {
                     <fig-td>
                         <div class="flex items-center justify-center w-full gap-4">
                             <fig-button
+                                :variant="obj.active ? 'danger' : 'plain'"
+                                @click="toggleActive(obj)">{{ $t(obj.active ? 'Deactivate' : 'Activate') }}</fig-button>
+
+                            <!-- <fig-button
                                 variant="plain"
                                 iconOnly
                                 icon="edit"
-                                @click="upsertModal.show(obj.id)" />
+                                @click="upsertModal.show(obj.id)" /> -->
 
-                            <fig-pop-confirm
+                            <!-- <fig-pop-confirm
                                 @confirm="onDeleteItem(obj.id)">
                                 <template v-slot:reference>
                                     <fig-button
@@ -143,7 +167,7 @@ onMounted(() => {
                                         icon="trash" />
                                 </template>
                                 {{ $t('Delete this item?') }}
-                            </fig-pop-confirm>
+                            </fig-pop-confirm> -->
                         </div>
                     </fig-td>
                 </fig-tr>

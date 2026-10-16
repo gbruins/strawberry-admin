@@ -53,6 +53,20 @@ function onSuffixClick() {
 
 <style scoped>
 .input-group-addon {
-    @apply flex items-center justify-center -mr-px border-t border-b bg-gray-200 border-gray-300 px-1 whitespace-nowrap text-gray-600 text-sm leading-normal min-w-min;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: -1px;
+    border-top: 1px solid var(--color-gray-300);
+    border-bottom: 1px solid var(--color-gray-300);
+    border-left: 1px solid var(--color-gray-300);
+    background-color: var(--color-gray-200);
+    color: var(--color-gray-600);
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    min-width: min-content;
 }
 </style>

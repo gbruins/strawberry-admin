@@ -9,7 +9,7 @@ import { ref, watch } from 'vue';
 import FormInputNumber from '../number/FormInputNumber.vue';
 import FormInputEndcapper from '../endcapper/FormInputEndcapper.vue';
 import useFormInput from '../useFormInput.js';
-import round from 'lodash-es/round.js';
+import round from 'lodash.round';
 
 const props = defineProps({
     modelValue: {

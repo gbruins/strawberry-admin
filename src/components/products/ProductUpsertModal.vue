@@ -10,12 +10,14 @@ import { useI18n } from 'vue-i18n';
 import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
 import FigFormInputNumber from '@/components/figleaf/form/number/FormInputNumber.vue';
 import FigFormCheckbox from '@/components/figleaf/form/checkbox/FormCheckbox.vue';
+import FigFormInputMoney from '@/components/figleaf/form/money/FormInputMoney.vue';
 import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
 import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
 import FigButton from '@/components/figleaf/button/Button.vue';
 import FigModal from '@/components/figleaf/modal/Modal.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import ProductTypeSelect from '@/components/productTypes/ProductTypeSelect.vue';
+import StripeTaxCodeSelect from '@/components/products/StripeTaxCodeSelect.vue';
 import useApi from '@/composables/useApi';
 import useToast from '@/components/figleaf/toast/useToast';
 
@@ -40,6 +42,7 @@ const form = reactive({
     base_price: 0,
     stripe_price_id: null,
     stripe_product_id: null,
+    stripe_tax_code: null,
     published: true
 });
 
@@ -54,6 +57,7 @@ function getById(id: string) {
             form.base_price = response.data?.base_price || 0;
             form.stripe_price_id = response.data?.stripe_price_id || null;
             form.stripe_product_id = response.data?.stripe_product_id || null;
+            form.stripe_tax_code = response.data?.stripe_tax_code || null;
             form.published = response.data?.published !== undefined ? response.data.published : true;
 
             updateId.value = id;
@@ -67,9 +71,12 @@ function onSubmit() {
 
     return api.tryCatch(
         async () => {
-            await api.run({
-                ...formData
-            });
+            const data = { ...formData };
+            delete data.stripe_price_id;
+            delete data.stripe_product_id;
+            // delete data.stripe_tax_code;
+
+            await api.run(data);
 
             successToast({
                 title: t('Product saved successfully')
@@ -94,6 +101,7 @@ function resetData() {
     form.base_price = 0;
     form.stripe_price_id = null;
     form.stripe_product_id = null;
+    form.stripe_tax_code = null;
     form.published = true;
 }
 
@@ -121,7 +129,15 @@ defineExpose({
         </template>
 
         <fig-overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
-            <fig-label-value-group display="block" density="md">
+            <fig-label-value-group display="block" density="lg" bold-labels>
+                <!-- published -->
+                <fig-label-value>
+                    <template v-slot:label>{{ $t('Published') }}</template>
+                    <fig-form-checkbox
+                        v-model="form.published"
+                        binary />
+                </fig-label-value>
+
                 <!-- title -->
                 <fig-label-value>
                     <template v-slot:label>{{ $t('Title') }}</template>
@@ -146,34 +162,31 @@ defineExpose({
 
                 <!-- base price -->
                 <fig-label-value>
-                    <template v-slot:label>{{ $t('Base price') }}</template>
-                    <fig-form-input-number
-                        v-model="form.base_price"
-                        :min="0"
-                        :step="1" />
+                    <template v-slot:label>{{ $t('Price') }}</template>
+                    <fig-form-input-money
+                        v-model="form.base_price" />
                 </fig-label-value>
 
-                <!-- stripe price id -->
+                <!-- stripe tax code -->
                 <fig-label-value>
-                    <template v-slot:label>{{ $t('Stripe price ID') }}</template>
-                    <fig-form-input-text
-                        v-model="form.stripe_price_id" />
+                    <template v-slot:label>{{ $t('Stripe Tax Code') }}</template>
+                    <stripe-tax-code-select
+                        v-model="form.stripe_tax_code" />
                 </fig-label-value>
 
-                <!-- stripe product id -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Stripe product ID') }}</template>
-                    <fig-form-input-text
-                        v-model="form.stripe_product_id" />
-                </fig-label-value>
+                <template v-if="updateId">
+                    <!-- stripe price id -->
+                    <fig-label-value>
+                        <template v-slot:label>{{ $t('Stripe Price ID') }}</template>
+                        {{ form.stripe_price_id}}
+                    </fig-label-value>
 
-                <!-- published -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Published') }}</template>
-                    <fig-form-checkbox
-                        v-model="form.published"
-                        binary />
-                </fig-label-value>
+                    <!-- stripe product id -->
+                    <fig-label-value>
+                        <template v-slot:label>{{ $t('Stripe Product ID') }}</template>
+                        {{ form.stripe_product_id }}
+                    </fig-label-value>
+                </template>
             </fig-label-value-group>
         </fig-overlay>
 

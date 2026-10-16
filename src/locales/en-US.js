@@ -7,6 +7,8 @@ export default {
     '{num} result | {num} results': '{num} result | {num} results',
 
     'Actions': 'Actions',
+    'Activate': 'Activate',
+    'Activated: {name}': 'Activated: {name}',
     'Active': 'Active',
     'Add address discount': 'Add address discount',
     'Add allowed street': 'Add allowed street',
@@ -21,7 +23,6 @@ export default {
     'An unexpected error occurred.': 'An unexpected error occurred.',
     'Apply filters': 'Apply filters',
 
-    'Base price': 'Base price',
     'Billing': 'Billing',
     'Billing address': 'Billing address',
     'Browse': 'Browse',
@@ -40,6 +41,8 @@ export default {
     'Created': 'Created',
 
     'Dashboard': 'Dashboard',
+    'Deactivate': 'Deactivate',
+    'Deactivated: {name}': 'Deactivated: {name}',
     'Delete this item?': 'Delete this item?',
     'Delete this row?': 'Delete this row?',
     'Description': 'Description',
@@ -96,8 +99,9 @@ export default {
     'Street name': 'Street name',
     'Street number': 'Street number',
     'Stripe details': 'Stripe details',
-    'Stripe price ID': 'Stripe price ID',
-    'Stripe product ID': 'Stripe product ID',
+    'Stripe Price ID': 'Stripe Price ID',
+    'Stripe Product ID': 'Stripe Product ID',
+    'Stripe Tax Code': 'Stripe Tax Code',
     'Submit': 'Submit',
     'Subtotal': 'Subtotal',
     'Success': 'Success',

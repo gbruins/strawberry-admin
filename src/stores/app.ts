@@ -6,6 +6,7 @@ export const useAppStore = defineStore('appStore', () => {
     const loggedInUser = ref(null);
     const allowedStreets = ref([]);
     const productTypes = ref([]);
+    const stripeTaxCodes = ref([]);
 
     async function updateAllowedStreetsState() {
         try {
@@ -31,6 +32,7 @@ export const useAppStore = defineStore('appStore', () => {
         loggedInUser,
         allowedStreets,
         productTypes,
+        stripeTaxCodes,
         updateAllowedStreetsState,
         updateProductTypesState
     }
