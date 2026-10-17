@@ -20,7 +20,17 @@ import useToast from '@/components/figleaf/toast/useToast';
 
 const $apiSearch = useApi('service.search');
 const $apiMenus = useApi('serviceMenu.search');
-const menuTitles = ref<Record<string, string>>({});
+const menus = ref<Record<string, { title: string, published: boolean }>>({});
+
+// A service whose menu is missing (deleted) or unpublished shows no menu to visitors
+function menuProblem(id: string | null) {
+    if(!id) {
+        return null;
+    }
+
+    const menu = menus.value[id];
+    return !menu ? t('Menu deleted') : (!menu.published ? t('Menu not published') : null);
+}
 const $apiDelete = useApi('service.delete');
 const { t } = useI18n();
 const { successToast } = useToast();
@@ -42,7 +52,7 @@ function fetchMenus() {
     return $apiMenus.tryCatch(
         async () => {
             const response = await $apiMenus.run({ _pageSize: 500 });
-            menuTitles.value = Object.fromEntries((response.data || []).map((m) => [m.id, m.title]));
+            menus.value = Object.fromEntries((response.data || []).map((m) => [m.id, { title: m.title, published: m.published }]));
         }
     );
 }
@@ -145,7 +155,10 @@ onMounted(() => {
 
                     <!-- menu -->
                     <fig-td>
-                        {{ menuTitles[obj.service_menu_id] || '' }}
+                        {{ menus[obj.service_menu_id]?.title || '' }}
+                        <div v-if="menuProblem(obj.service_menu_id)" class="text-sm text-amber-700" data-test="menu-problem">
+                            {{ menuProblem(obj.service_menu_id) }}
+                        </div>
                     </fig-td>
 
                     <!-- max_per_order -->

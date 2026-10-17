@@ -87,6 +87,11 @@ onMounted(() => {
                     <router-link
                         class="nav-item-main"
                         active-class="nav-item-main--active"
+                        :to="{ name: 'menus' }">{{ $t('Menus') }}</router-link>
+
+                    <router-link
+                        class="nav-item-main"
+                        active-class="nav-item-main--active"
                         :to="{ name: 'products' }">{{ $t('Products') }}</router-link>
 
                     <router-link

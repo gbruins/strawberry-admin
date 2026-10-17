@@ -62,6 +62,12 @@ const router = createRouter({
         },
 
         {
+            path: '/menus',
+            name: 'menus',
+            component: () => import('@/pages/MenusPage.vue'),
+        },
+
+        {
             path: '/services',
             name: 'services',
             component: () => import('@/pages/ServicesPage.vue'),
