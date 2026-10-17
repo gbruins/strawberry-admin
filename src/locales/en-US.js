@@ -13,6 +13,7 @@ export default {
     'Add address discount': 'Add address discount',
     'Add allowed street': 'Add allowed street',
     'Add note': 'Add note',
+    'Customer note': 'Customer note',
     'Add product': 'Add product',
     'Add product type': 'Add product type',
     'Add service': 'Add service',

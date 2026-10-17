@@ -79,6 +79,11 @@ watch(
         </template>
 
         <div class="w-full">
+            <div v-if="cart?.customer_note" class="mb-4" data-test="customer-note">
+                <div class="text-sm font-bold">{{ $t('Customer note') }}</div>
+                <p class="whitespace-pre-wrap break-words">{{ cart.customer_note }}</p>
+            </div>
+
             <fig-overlay :show="$apiUpdate.isLoading.value">
                 <fig-row-builder
                     v-model="cartNotes"
