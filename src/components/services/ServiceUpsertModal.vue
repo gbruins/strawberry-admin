@@ -5,19 +5,17 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, type Ref } from 'vue';
+import { ref, reactive, computed, onMounted, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minValue } from '@vuelidate/validators';
-import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
-import FigFormInputNumber from '@/components/figleaf/form/number/FormInputNumber.vue';
-import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
-import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigModal from '@/components/figleaf/modal/Modal.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigFormSelectNative from '@/components/figleaf/form/selectNative/FormSelectNative.vue';
-import FigFormInputDate from '@/components/figleaf/form/date/FormInputDate.vue';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import Overlay from '@/components/Overlay.vue';
+import DateTimePicker from '@/components/DateTimePicker.vue';
 import useApi from '@/composables/useApi';
 import useToast from '@/composables/useToast';
 
@@ -30,10 +28,12 @@ const $apiCreate = useApi('service.create');
 const $apiUpdate = useApi('service.update');
 const $apiRead = useApi('service.read');
 const $apiMenus = useApi('serviceMenu.search');
-const menuOptions: Ref<{ value: string | null, label: string }[]> = ref([]);
+const menuOptions: Ref<{ value: string, label: string }[]> = ref([]);
 const { successToast } = useToast();
 
-const upsertModal = ref(null);
+const NO_MENU = '';
+
+const open = ref(false);
 const updateId: Ref<string | null> = ref(null);
 
 const form = reactive({
@@ -43,6 +43,13 @@ const form = reactive({
     inventory_count: 0,
     service_menu_id: null as string | null,
     max_per_order: 4,
+});
+
+const menuSelectValue = computed({
+    get: () => form.service_menu_id ?? NO_MENU,
+    set: (val: string) => {
+        form.service_menu_id = val === NO_MENU ? null : val;
+    }
 });
 
 const validationRules = {
@@ -70,7 +77,7 @@ function loadMenus() {
             const response = await $apiMenus.run({ _pageSize: 500, _sort: 'title' });
 
             menuOptions.value = [
-                { value: null, label: t('No menu') },
+                { value: NO_MENU, label: t('No menu') },
                 ...(response.data || [])
                     .filter((m) => m.published)
                     .map((m) => ({ value: m.id, label: m.title }))
@@ -128,7 +135,7 @@ function onSubmit() {
 }
 
 function hide() {
-    upsertModal.value.hide();
+    open.value = false;
 }
 
 function resetData() {
@@ -149,7 +156,7 @@ function show(id) {
         getById(id);
     }
 
-    upsertModal.value.show();
+    open.value = true;
 }
 
 defineExpose({
@@ -158,100 +165,89 @@ defineExpose({
 </script>
 
 <template>
-    <fig-modal
-        size="lg"
-        ref="upsertModal">
-        <template v-slot:header>
-            {{ updateId ? $t('Update service') : $t('Create service') }}
-        </template>
+    <Dialog v-model:open="open">
+        <DialogContent class="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>{{ updateId ? t('Update service') : t('Create service') }}</DialogTitle>
+            </DialogHeader>
 
-        <fig-overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
-            <fig-label-value-group display="block" density="md">
-                <!-- start at -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Start at') }}</template>
+            <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- start at -->
+                    <div class="grid gap-1.5">
+                        <Label>{{ t('Start at') }}</Label>
 
-                    <fig-form-input-date
-                        v-model="form.start_at"
-                        @update:modelValue="onStartAtChange" />
+                        <DateTimePicker
+                            v-model="form.start_at"
+                            @update:modelValue="onStartAtChange" />
 
-                    <template v-slot:error>
-                        <div v-if="v$.start_at.required.$invalid">{{ $t('required') }}</div>
-                    </template>
-                </fig-label-value>
+                        <div v-if="v$.start_at.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                    </div>
 
-                <!-- end at -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('End at') }}</template>
+                    <!-- end at -->
+                    <div class="grid gap-1.5">
+                        <Label>{{ t('End at') }}</Label>
 
-                    <fig-form-input-date
-                        v-model="form.end_at" />
+                        <DateTimePicker v-model="form.end_at" />
 
-                    <template v-slot:error>
-                        <div v-if="v$.end_at.required.$invalid">{{ $t('required') }}</div>
-                        <div v-else-if="v$.end_at.afterStartAt.$invalid">{{ $t('must be after "Start at"') }}</div>
-                    </template>
-                </fig-label-value>
+                        <div v-if="v$.end_at.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                        <div v-else-if="v$.end_at.afterStartAt.$invalid" class="text-sm text-destructive">{{ t('must be after "Start at"') }}</div>
+                    </div>
 
-                <!-- notes -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Notes') }}</template>
-                    <fig-form-input-text
-                        v-model="form.notes" />
-                </fig-label-value>
+                    <!-- notes -->
+                    <div class="grid gap-1.5">
+                        <Label for="service-notes">{{ t('Notes') }}</Label>
+                        <Input id="service-notes" v-model="form.notes" />
+                    </div>
 
-                <!-- dough count -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Dough count') }}</template>
+                    <!-- dough count -->
+                    <div class="grid gap-1.5">
+                        <Label for="service-inventory-count">{{ t('Dough count') }}</Label>
 
-                    <fig-form-input-number
-                        v-model="form.inventory_count"
-                        :min="0"
-                        :step="1" />
+                        <Input
+                            id="service-inventory-count"
+                            v-model.number="form.inventory_count"
+                            type="number"
+                            min="0"
+                            step="1" />
 
-                    <template v-slot:error>
-                        <div v-if="v$.inventory_count.required.$invalid">{{ $t('required') }}</div>
-                        <div v-else-if="v$.inventory_count.minValue.$invalid">{{ $t('must be at least {min}', { min: 1 }) }}</div>
-                    </template>
-                </fig-label-value>
+                        <div v-if="v$.inventory_count.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                        <div v-else-if="v$.inventory_count.minValue.$invalid" class="text-sm text-destructive">{{ t('must be at least {min}', { min: 1 }) }}</div>
+                    </div>
 
-                <!-- menu -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Menu') }}</template>
+                    <!-- menu -->
+                    <div class="grid gap-1.5">
+                        <Label>{{ t('Menu') }}</Label>
 
-                    <fig-form-select-native
-                        v-model="form.service_menu_id"
-                        :options="menuOptions" />
-                </fig-label-value>
+                        <NativeSelect v-model="menuSelectValue" class="w-full">
+                            <NativeSelectOption
+                                v-for="option in menuOptions"
+                                :key="option.value"
+                                :value="option.value">{{ option.label }}</NativeSelectOption>
+                        </NativeSelect>
+                    </div>
 
-                <!-- max per order -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Max pizzas per order') }}</template>
+                    <!-- max per order -->
+                    <div class="grid gap-1.5">
+                        <Label for="service-max-per-order">{{ t('Max pizzas per order') }}</Label>
 
-                    <fig-form-input-number
-                        v-model="form.max_per_order"
-                        :min="1"
-                        :step="1" />
+                        <Input
+                            id="service-max-per-order"
+                            v-model.number="form.max_per_order"
+                            type="number"
+                            min="1"
+                            step="1" />
 
-                    <template v-slot:error>
-                        <div v-if="v$.max_per_order.required.$invalid">{{ $t('required') }}</div>
-                        <div v-else-if="v$.max_per_order.minValue.$invalid">{{ $t('must be at least {min}', { min: 1 }) }}</div>
-                    </template>
-                </fig-label-value>
-            </fig-label-value-group>
-        </fig-overlay>
+                        <div v-if="v$.max_per_order.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                        <div v-else-if="v$.max_per_order.minValue.$invalid" class="text-sm text-destructive">{{ t('must be at least {min}', { min: 1 }) }}</div>
+                    </div>
+                </div>
+            </Overlay>
 
-        <template v-slot:footer>
-            <div class="flex items-center gap-4 w-full justify-center">
-                <fig-button
-                    variant="primary"
-                    @click="onSubmit"
-                    :disabled="v$.$invalid">{{ $t('Submit') }}</fig-button>
-
-                <fig-button
-                    variant="plain"
-                    @click="hide">{{ $t('Cancel') }}</fig-button>
-            </div>
-        </template>
-    </fig-modal>
+            <DialogFooter class="sm:justify-center">
+                <Button :disabled="v$.$invalid" @click="onSubmit">{{ t('Submit') }}</Button>
+                <Button variant="ghost" @click="hide">{{ t('Cancel') }}</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>
