@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
+import Format8601 from '@/components/Format8601.vue';
 import FigTag from '@/components/figleaf/tag/Tag.vue';
 import CartDetailPaymentCard from '@/components/cart/CartDetailPaymentCard.vue';
 import CartDetailBillingCard from '@/components/cart/CartDetailBillingCard.vue';
@@ -50,7 +50,7 @@ onMounted(() => {
 
                     <div v-if="cartData?.closed_at">
                         <fig-tag variant="success">{{ $t('Closed') }}</fig-tag>
-                        <fig-format8601 :date="cartData?.closed_at" />
+                        <format8601 :date="cartData?.closed_at" />
                     </div>
                     <fig-tag v-else variant="error">{{ $t('Open') }}</fig-tag>
                 </fig-label-value>
@@ -60,7 +60,7 @@ onMounted(() => {
                     <template v-slot:label>
                         <span class="font-semibold">{{ $t('Created') }}</span>:
                     </template>
-                    <fig-format8601 :date="cartData?.created_at" />
+                    <format8601 :date="cartData?.created_at" />
                 </fig-label-value>
             </div>
 

@@ -11,7 +11,7 @@ import FigButton from '@/components/figleaf/button/Button.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
 import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
+import Format8601 from '@/components/Format8601.vue';
 import ServiceUpsertModal from '@/components/services/ServiceUpsertModal.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
@@ -140,12 +140,12 @@ onMounted(() => {
                 <fig-tr v-for="(obj, idx) in tableResults" :key="idx">
                     <!-- start_at -->
                     <fig-td>
-                        <fig-format8601 :date="obj.start_at" />
+                        <format8601 :date="obj.start_at" />
                     </fig-td>
 
                     <!-- end_at -->
                     <fig-td>
-                        <fig-format8601 :date="obj.end_at" />
+                        <format8601 :date="obj.end_at" />
                     </fig-td>
 
                     <!-- notes -->

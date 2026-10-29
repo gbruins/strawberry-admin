@@ -11,7 +11,7 @@ import FigButton from '@/components/figleaf/button/Button.vue';
 import FigIcon from '@/components/figleaf/icon/FigIcon.vue';
 import FigModal from '@/components/figleaf/modal/Modal.vue';
 import FigTextCard from '@/components/figleaf/textCard/TextCard.vue';
-import FigIconLabel from '@/components/figleaf/iconLabel/IconLabel.vue';
+import IconLabel from '@/components/IconLabel.vue';
 
 const props = defineProps({
     cart: {
@@ -29,7 +29,7 @@ function showCartDataModal() {
 <template>
     <fig-text-card variant="white">
         <template v-slot:header_left>
-            <fig-icon-label>
+            <icon-label>
                 <template v-slot:left>
                     <fig-icon
                         icon="cart"
@@ -38,7 +38,7 @@ function showCartDataModal() {
                         :stroke-width="1" />
                 </template>
                 <div class="text-lg font-bold">{{ $t('Cart') }}</div>
-            </fig-icon-label>
+            </icon-label>
         </template>
 
         <fig-button

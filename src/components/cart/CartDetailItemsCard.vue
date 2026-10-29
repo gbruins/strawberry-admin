@@ -7,14 +7,14 @@ export default {
 <script setup>
 import FigIcon from '@/components/figleaf/icon/FigIcon.vue';
 import FigTextCard from '@/components/figleaf/textCard/TextCard.vue';
-import FigIconLabel from '@/components/figleaf/iconLabel/IconLabel.vue';
+import IconLabel from '@/components/IconLabel.vue';
 import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
 import FigTh from '@/components/figleaf/tableSimple/Th.vue';
 import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
 import FigTd from '@/components/figleaf/tableSimple/Td.vue';
 import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
-import FigMoney from '@/components/figleaf/money/Money.vue';
-import FigNumber from '@/components/figleaf/number/Number.vue';
+import Money from '@/components/Money.vue';
+import NumberDisplay from '@/components/NumberDisplay.vue';
 import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
 import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
 
@@ -29,7 +29,7 @@ const props = defineProps({
 <template>
     <fig-text-card variant="white">
         <template v-slot:header_left>
-            <fig-icon-label>
+            <icon-label>
                 <template v-slot:left>
                     <fig-icon
                         icon="cookie"
@@ -38,7 +38,7 @@ const props = defineProps({
                         :stroke-width="1" />
                 </template>
                 <div class="text-lg font-bold">{{ $t('Cart items') }}</div>
-            </fig-icon-label>
+            </icon-label>
         </template>
 
         <fig-table-simple
@@ -64,17 +64,17 @@ const props = defineProps({
 
                 <!-- quantity -->
                 <fig-td class="text-right">
-                    <fig-number :value="obj.qty" />
+                    <number-display :value="obj.qty" />
                 </fig-td>
 
                 <!-- price -->
                 <fig-td class="text-right">
-                    <fig-money :cents="obj.product.base_price" />
+                    <money :cents="obj.product.base_price" />
                 </fig-td>
 
                 <!-- subtotal -->
                 <fig-td class="text-right">
-                    <fig-money :cents="obj.price_subtotal" />
+                    <money :cents="obj.price_subtotal" />
                 </fig-td>
             </fig-tr>
 
@@ -87,19 +87,19 @@ const props = defineProps({
                 <!-- sub total -->
                 <fig-label-value>
                     <template v-slot:label>{{ $t('Subtotal') }}:</template>
-                    <div class="font-mono text-right"><fig-money :cents="cart?.price_subtotal" /></div>
+                    <div class="font-mono text-right"><money :cents="cart?.price_subtotal" /></div>
                 </fig-label-value>
 
                 <!-- sales tax -->
                 <fig-label-value>
                     <template v-slot:label>{{ $t('Tax') }}:</template>
-                    <div class="font-mono text-right"><fig-money :cents="cart?.sales_tax" /></div>
+                    <div class="font-mono text-right"><money :cents="cart?.sales_tax" /></div>
                 </fig-label-value>
 
                 <!-- grand total -->
                 <fig-label-value>
                     <template v-slot:label>{{ $t('Grand total') }}:</template>
-                    <div class="font-mono text-right"><fig-money :cents="cart?.grand_total" /></div>
+                    <div class="font-mono text-right"><money :cents="cart?.grand_total" /></div>
                 </fig-label-value>
             </fig-label-value-group>
         </div>

@@ -1,9 +1,3 @@
-<script>
-export default {
-    name: 'Money'
-}
-</script>
-
 <script setup>
 import { computed } from 'vue';
 

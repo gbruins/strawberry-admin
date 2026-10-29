@@ -12,7 +12,7 @@ import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
 import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
 import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
+import Format8601 from '@/components/Format8601.vue';
 import MenuUpsertModal from '@/components/menus/MenuUpsertModal.vue';
 import MenuProductsModal from '@/components/menus/MenuProductsModal.vue';
 import useApi from '@/composables/useApi';
@@ -123,7 +123,7 @@ onMounted(() => {
 
                     <fig-td>
                         <div v-for="svc in obj.services" :key="svc.id">
-                            <fig-format8601 :date="svc.start_at" />
+                            <format8601 :date="svc.start_at" />
                         </div>
                     </fig-td>
 
@@ -155,7 +155,7 @@ onMounted(() => {
                                     {{ $t('These services use this menu and will show no menu:') }}
                                     <ul class="list-disc ml-5">
                                         <li v-for="svc in obj.services" :key="svc.id">
-                                            <fig-format8601 :date="svc.start_at" />
+                                            <format8601 :date="svc.start_at" />
                                         </li>
                                     </ul>
                                 </div>

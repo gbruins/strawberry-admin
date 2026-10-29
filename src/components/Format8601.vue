@@ -1,9 +1,3 @@
-<script>
-export default {
-    name: 'Format8601'
-}
-</script>
-
 <script setup>
 import { computed } from 'vue';
 import useDate from '@/composables/useDate.js';

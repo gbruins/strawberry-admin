@@ -1,9 +1,3 @@
-<script>
-export default {
-    name: 'FigNumber'
-}
-</script>
-
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -104,9 +98,7 @@ const label = computed(() => {
     <component
         :is="elementType"
         v-bind="cleanAttrs"
-        :class="{'text-gray-400': !cleanValue}">
+        :class="{'text-muted-foreground': !cleanValue}">
         {{ label }}
     </component>
 </template>
-
-

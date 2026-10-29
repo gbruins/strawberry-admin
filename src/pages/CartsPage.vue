@@ -14,10 +14,10 @@ import FigFormGroup from '@/components/figleaf/form/group/FormGroup.vue';
 import FigFormMultiSelect from '@/components/figleaf/form/multiselect/FormMultiSelect.vue';
 import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
 import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
-import FigMoney from '@/components/figleaf/money/Money.vue';
-import FigNumber from '@/components/figleaf/number/Number.vue';
-import FigAddress from '@/components/figleaf/address/Address.vue';
+import Format8601 from '@/components/Format8601.vue';
+import Money from '@/components/Money.vue';
+import NumberDisplay from '@/components/NumberDisplay.vue';
+import AddressDisplay from '@/components/AddressDisplay.vue';
 import FigTag from '@/components/figleaf/tag/Tag.vue';
 import FigTooltip from '@/components/figleaf/tooltip/Tooltip.vue';
 import useApi from '@/composables/useApi';
@@ -156,7 +156,7 @@ onMounted(() => {
                         <router-link
                             :to="{ name: 'cart', params: { id: obj.id }}"
                             tag="a">
-                            <fig-format8601 :date="obj.created_at " />
+                            <format8601 :date="obj.created_at " />
                         </router-link>
                     </fig-td>
 
@@ -166,7 +166,7 @@ onMounted(() => {
                             <template v-slot:toggler>
                                 <fig-tag variant="success">{{ $t('Closed') }}</fig-tag>
                             </template>
-                            <fig-format8601 :date="obj.closed_at" />
+                            <format8601 :date="obj.closed_at" />
                         </fig-tooltip>
 
                         <fig-tag v-else variant="error">{{ $t('Open') }}</fig-tag>
@@ -174,27 +174,27 @@ onMounted(() => {
 
                     <!-- grand total -->
                     <fig-td class="text-right">
-                        <fig-money :cents="obj.grand_total" />
+                        <money :cents="obj.grand_total" />
                     </fig-td>
 
                     <!-- subtotal -->
                     <fig-td class="text-right">
-                        <fig-money :cents="obj.price_subtotal" />
+                        <money :cents="obj.price_subtotal" />
                     </fig-td>
 
                     <!-- tax -->
                     <fig-td class="text-right">
-                        <fig-money :cents="obj.price_tax" />
+                        <money :cents="obj.price_tax" />
                     </fig-td>
 
                     <!-- number of items -->
                     <fig-td class="text-right">
-                        <fig-number :value="obj.num_items" />
+                        <number-display :value="obj.num_items" />
                     </fig-td>
 
                     <!-- billing address -->
                     <fig-td>
-                        <fig-address
+                        <address-display
                             :first-name="obj.billing_firstName"
                             :last-name="obj.billing_lastName"
                             :company="obj.billing_company"

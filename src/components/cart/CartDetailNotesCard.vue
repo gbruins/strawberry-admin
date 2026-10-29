@@ -14,8 +14,8 @@ import FigTextCard from '@/components/figleaf/textCard/TextCard.vue';
 import FigRowBuilder from '@/components/figleaf/rowBuilder/RowBuilder.vue';
 import FigFormTextarea from '@/components/figleaf/form/textarea/FormTextarea.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
-import FigIconLabel from '@/components/figleaf/iconLabel/IconLabel.vue';
+import Format8601 from '@/components/Format8601.vue';
+import IconLabel from '@/components/IconLabel.vue';
 import useToast from '@/components/figleaf/toast/useToast';
 
 const props = defineProps({
@@ -66,7 +66,7 @@ watch(
 <template>
     <fig-text-card variant="white">
         <template v-slot:header_left>
-            <fig-icon-label>
+            <icon-label>
                 <template v-slot:left>
                     <fig-icon
                         icon="notes"
@@ -75,7 +75,7 @@ watch(
                         :stroke-width="1" />
                 </template>
                 <div class="text-lg font-bold">{{ $t('Notes') }}</div>
-            </fig-icon-label>
+            </icon-label>
         </template>
 
         <div class="w-full">

@@ -1,9 +1,3 @@
-<script>
-export default {
-    name: 'Address'
-}
-</script>
-
 <script setup>
 import { computed } from 'vue';
 
@@ -120,19 +114,13 @@ const formattedCityStateZip= computed(() => {
 
 <template>
     <div>
-        <div class="addressRow">{{ formattedName }}</div>
-        <div class="addressRow" v-if="formattedCompanyName">{{ formattedCompanyName }}</div>
-        <div class="addressRow" v-if="streetAddress">{{ streetAddress }}</div>
-        <div class="addressRow" v-if="extendedAddress">{{ extendedAddress }}</div>
-        <div class="addressRow">{{ formattedCityStateZip }}</div>
-        <div class="addressRow" v-if="countryCode && !countryCodeInline" >{{ countryCode }}</div>
-        <div class="addressRow" v-if="email">{{ email }}</div>
+        <div class="mb-0.5">{{ formattedName }}</div>
+        <div class="mb-0.5" v-if="formattedCompanyName">{{ formattedCompanyName }}</div>
+        <div class="mb-0.5" v-if="streetAddress">{{ streetAddress }}</div>
+        <div class="mb-0.5" v-if="extendedAddress">{{ extendedAddress }}</div>
+        <div class="mb-0.5">{{ formattedCityStateZip }}</div>
+        <div class="mb-0.5" v-if="countryCode && !countryCodeInline" >{{ countryCode }}</div>
+        <div class="mb-0.5" v-if="email">{{ email }}</div>
         <div v-if="phone">{{ phone }}</div>
     </div>
 </template>
-
-<style scoped>
-.addressRow {
-    margin-bottom: 2px;
-}
-</style>

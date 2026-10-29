@@ -7,11 +7,11 @@ export default {
 <script setup>
 import FigCardLastFour from '@/components/figleaf/cardLastFour/CardLastFour.vue';
 import FigTextCard from '@/components/figleaf/textCard/TextCard.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
+import Format8601 from '@/components/Format8601.vue';
 import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
 import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
 import FigIcon from '@/components/figleaf/icon/FigIcon.vue';
-import FigIconLabel from '@/components/figleaf/iconLabel/IconLabel.vue';
+import IconLabel from '@/components/IconLabel.vue';
 
 const props = defineProps({
     cart: {
@@ -27,7 +27,7 @@ const props = defineProps({
 <template>
     <fig-text-card variant="white">
         <template v-slot:header_left>
-            <fig-icon-label>
+            <icon-label>
                 <template v-slot:left>
                     <fig-icon
                         icon="credit-card"
@@ -36,7 +36,7 @@ const props = defineProps({
                         :stroke-width="1" />
                 </template>
                 <div class="text-lg font-bold">{{ $t('Payment') }}</div>
-            </fig-icon-label>
+            </icon-label>
         </template>
 
         <fig-label-value-group density="md" display="table" class="text-sm">

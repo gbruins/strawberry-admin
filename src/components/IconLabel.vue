@@ -1,9 +1,3 @@
-<script>
-export default {
-    name: 'IconLabel'
-}
-</script>
-
 <script setup>
 import { computed, useSlots } from 'vue';
 

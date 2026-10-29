@@ -9,7 +9,7 @@ import FigTd from '@/components/figleaf/tableSimple/Td.vue';
 import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
 import FigButton from '@/components/figleaf/button/Button.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigMoney from '@/components/figleaf/money/Money.vue';
+import Money from '@/components/Money.vue';
 import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
 import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
 import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
@@ -134,7 +134,7 @@ onMounted(() => {
 
                     <!-- price -->
                     <fig-td class="text-right">
-                        <fig-money :cents="obj.base_price" />
+                        <money :cents="obj.base_price" />
                     </fig-td>
 
                     <!-- published -->

@@ -17,7 +17,7 @@ import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
 import FigButton from '@/components/figleaf/button/Button.vue';
 import FigModal from '@/components/figleaf/modal/Modal.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
+import Format8601 from '@/components/Format8601.vue';
 import useApi from '@/composables/useApi';
 import useToast from '@/components/figleaf/toast/useToast';
 
@@ -180,7 +180,7 @@ defineExpose({ show });
                     {{ $t('Unpublishing hides this menu from visitors. These services use it:') }}
                     <ul class="list-disc ml-5">
                         <li v-for="svc in services" :key="svc.id">
-                            <fig-format8601 :date="svc.start_at" />
+                            <format8601 :date="svc.start_at" />
                         </li>
                     </ul>
                 </div>

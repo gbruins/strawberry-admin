@@ -5,9 +5,9 @@ export default {
 </script>
 
 <script setup>
-import FigAddress from '@/components/figleaf/address/Address.vue';
+import AddressDisplay from '@/components/AddressDisplay.vue';
 import FigIcon from '@/components/figleaf/icon/FigIcon.vue';
-import FigIconLabel from '@/components/figleaf/iconLabel/IconLabel.vue';
+import IconLabel from '@/components/IconLabel.vue';
 import FigTextCard from '@/components/figleaf/textCard/TextCard.vue';
 
 const props = defineProps({
@@ -21,7 +21,7 @@ const props = defineProps({
 <template>
     <fig-text-card variant="white">
         <template v-slot:header_left>
-            <fig-icon-label>
+            <icon-label>
                 <template v-slot:left>
                     <fig-icon
                         icon="file-invoice"
@@ -30,10 +30,10 @@ const props = defineProps({
                         :stroke-width="1" />
                 </template>
                 <div class="text-lg font-bold">{{ $t('Billing') }}</div>
-            </fig-icon-label>
+            </icon-label>
         </template>
 
-        <fig-address
+        <address-display
             :first-name="cart?.billing_firstName"
             :last-name="cart?.billing_lastName"
             :company="cart?.billing_company"

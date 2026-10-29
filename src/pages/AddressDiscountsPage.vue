@@ -8,11 +8,11 @@ import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
 import FigTd from '@/components/figleaf/tableSimple/Td.vue';
 import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
 import FigButton from '@/components/figleaf/button/Button.vue';
-import FigNumber from '@/components/figleaf/number/Number.vue';
+import NumberDisplay from '@/components/NumberDisplay.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
 import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
+import Format8601 from '@/components/Format8601.vue';
 import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
 import AddressDiscountsUpsertModal from '@/components/addressDiscounts/AddressDiscountsUpsertModal.vue';
 import StreetNameDisplay from '@/components/allowedStreets/StreetNameDisplay.vue';
@@ -130,7 +130,7 @@ onMounted(() => {
 
                     <!-- Discount -->
                     <fig-td class="text-right">
-                        <fig-number
+                        <number-display
                             :value="obj.discount_percent ? obj.discount_percent / 100 : 0"
                             format="percent"
                             :config="{ maximumFractionDigits: 2 }" />
@@ -143,7 +143,7 @@ onMounted(() => {
 
                     <!-- created -->
                     <fig-td>
-                        <fig-format8601 :date="obj.created_at" />
+                        <format8601 :date="obj.created_at" />
                     </fig-td>
 
                     <!-- actions -->
