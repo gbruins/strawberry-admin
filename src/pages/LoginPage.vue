@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { ref, reactive, computed, type Ref } from 'vue';
+import { reactive, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useAppStore } from '@/stores/app.js';
-import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import useToast from '@/composables/useToast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import useApi from '@/composables/useApi';
 
 const $apiLogin = useApi('auth.login');
-const { errorToast } = useToast();
 const router = useRouter();
 const { t } = useI18n();
 const appStore = useAppStore();
@@ -45,32 +44,38 @@ function onSubmit() {
 
 <template>
     <div class="mx-auto w-96 mt-24">
-        <div class="text-2xl font-semibold mb-6 text-center text-gray-500">
-            {{ $t('Login') }}
-        </div>
-        <div class="p-10 border border-gray-200 rounded shadow-lg bg-gray-50">
-            <form class="grid grid-cols-1 gap-4 " @submit.prevent="onSubmit">
-                <fig-form-input-text
-                    v-model="form.username"
-                    :placeholder="$t('Username')" />
+        <Card>
+            <CardHeader>
+                <CardTitle class="text-center text-xl">{{ t('Login') }}</CardTitle>
+            </CardHeader>
 
-                <fig-form-input-text
-                    v-model="form.password"
-                    :placeholder="$t('Password')"
-                    type="password"
-                    :autocomplete="false" />
+            <CardContent>
+                <form class="grid grid-cols-1 gap-4" @submit.prevent="onSubmit">
+                    <div class="grid gap-1.5">
+                        <Label for="login-username">{{ t('Username') }}</Label>
+                        <Input
+                            id="login-username"
+                            v-model="form.username"
+                            autocomplete="username" />
+                    </div>
 
-                <div>
-                    <fig-button
+                    <div class="grid gap-1.5">
+                        <Label for="login-password">{{ t('Password') }}</Label>
+                        <Input
+                            id="login-password"
+                            v-model="form.password"
+                            type="password"
+                            autocomplete="current-password" />
+                    </div>
+
+                    <Button
                         type="submit"
-                        variant="primary"
-                        size="md"
-                        block
+                        class="w-full"
                         :disabled="!buttonIsEnabled">
-                        {{ $t('Login') }}
-                    </fig-button>
-                </div>
-            </form>
-        </div>
+                        {{ t('Login') }}
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
     </div>
 </template>
