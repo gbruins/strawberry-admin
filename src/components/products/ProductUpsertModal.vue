@@ -1,21 +1,13 @@
-<script lang="ts">
-export default {
-    name: 'ProductUpsertModal'
-}
-</script>
-
 <script setup lang="ts">
 import { ref, reactive, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
-import FigFormInputNumber from '@/components/figleaf/form/number/FormInputNumber.vue';
-import FigFormCheckbox from '@/components/figleaf/form/checkbox/FormCheckbox.vue';
-import FigFormInputMoney from '@/components/figleaf/form/money/FormInputMoney.vue';
-import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
-import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigModal from '@/components/figleaf/modal/Modal.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import Overlay from '@/components/Overlay.vue';
+import MoneyInput from '@/components/MoneyInput.vue';
 import ProductTypeSelect from '@/components/productTypes/ProductTypeSelect.vue';
 import StripeTaxCodeSelect from '@/components/products/StripeTaxCodeSelect.vue';
 import useApi from '@/composables/useApi';
@@ -29,10 +21,9 @@ const { t } = useI18n();
 const $apiCreate = useApi('product.create');
 const $apiUpdate = useApi('product.update');
 const $apiRead = useApi('product.read');
-const $apiSearch = useApi('product.search');
 const { successToast } = useToast();
 
-const upsertModal = ref(null);
+const open = ref(false);
 const updateId: Ref<string | null> = ref(null);
 
 const form = reactive({
@@ -74,7 +65,6 @@ function onSubmit() {
             const data = { ...formData };
             delete data.stripe_price_id;
             delete data.stripe_product_id;
-            // delete data.stripe_tax_code;
 
             await api.run(data);
 
@@ -89,7 +79,7 @@ function onSubmit() {
 }
 
 function hide() {
-    upsertModal.value.hide();
+    open.value = false;
 }
 
 function resetData() {
@@ -112,7 +102,7 @@ function show(id) {
         getById(id);
     }
 
-    upsertModal.value.show();
+    open.value = true;
 }
 
 defineExpose({
@@ -121,85 +111,70 @@ defineExpose({
 </script>
 
 <template>
-    <fig-modal
-        size="lg"
-        ref="upsertModal">
-        <template v-slot:header>
-            {{ updateId ? $t('Update product') : $t('Create product') }}
-        </template>
+    <Dialog v-model:open="open">
+        <DialogContent class="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>{{ updateId ? t('Update product') : t('Create product') }}</DialogTitle>
+            </DialogHeader>
 
-        <fig-overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
-            <fig-label-value-group display="block" density="lg" bold-labels>
-                <!-- published -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Published') }}</template>
-                    <fig-form-checkbox
-                        v-model="form.published"
-                        binary />
-                </fig-label-value>
+            <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- published -->
+                    <div class="flex items-center gap-2">
+                        <Checkbox id="product-published" v-model="form.published" />
+                        <Label for="product-published">{{ t('Published') }}</Label>
+                    </div>
 
-                <!-- title -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Title') }}</template>
-                    <fig-form-input-text
-                        v-model="form.title" />
-                </fig-label-value>
+                    <!-- title -->
+                    <div class="grid gap-1.5">
+                        <Label for="product-title">{{ t('Title') }}</Label>
+                        <Input id="product-title" v-model="form.title" />
+                    </div>
 
-                <!-- description -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Description') }}</template>
-                    <fig-form-input-text
-                        v-model="form.description" />
-                </fig-label-value>
+                    <!-- description -->
+                    <div class="grid gap-1.5">
+                        <Label for="product-description">{{ t('Description') }}</Label>
+                        <Input id="product-description" v-model="form.description" />
+                    </div>
 
-                <!-- product type -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Product type') }}</template>
-                    <product-type-select
-                        v-model="form.product_type"
-                        :clearable="true" />
-                </fig-label-value>
+                    <!-- product type -->
+                    <div class="grid gap-1.5">
+                        <Label>{{ t('Product type') }}</Label>
+                        <ProductTypeSelect v-model="form.product_type" clearable />
+                    </div>
 
-                <!-- base price -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Price') }}</template>
-                    <fig-form-input-money
-                        v-model="form.base_price" />
-                </fig-label-value>
+                    <!-- base price -->
+                    <div class="grid gap-1.5">
+                        <Label>{{ t('Price') }}</Label>
+                        <MoneyInput v-model="form.base_price" />
+                    </div>
 
-                <!-- stripe tax code -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Stripe Tax Code') }}</template>
-                    <stripe-tax-code-select
-                        v-model="form.stripe_tax_code" />
-                </fig-label-value>
+                    <!-- stripe tax code -->
+                    <div class="grid gap-1.5">
+                        <Label>{{ t('Stripe Tax Code') }}</Label>
+                        <StripeTaxCodeSelect v-model="form.stripe_tax_code" />
+                    </div>
 
-                <template v-if="updateId">
-                    <!-- stripe price id -->
-                    <fig-label-value>
-                        <template v-slot:label>{{ $t('Stripe Price ID') }}</template>
-                        {{ form.stripe_price_id}}
-                    </fig-label-value>
+                    <template v-if="updateId">
+                        <!-- stripe price id -->
+                        <div class="grid gap-1.5">
+                            <Label>{{ t('Stripe Price ID') }}</Label>
+                            <div class="text-sm text-muted-foreground">{{ form.stripe_price_id }}</div>
+                        </div>
 
-                    <!-- stripe product id -->
-                    <fig-label-value>
-                        <template v-slot:label>{{ $t('Stripe Product ID') }}</template>
-                        {{ form.stripe_product_id }}
-                    </fig-label-value>
-                </template>
-            </fig-label-value-group>
-        </fig-overlay>
+                        <!-- stripe product id -->
+                        <div class="grid gap-1.5">
+                            <Label>{{ t('Stripe Product ID') }}</Label>
+                            <div class="text-sm text-muted-foreground">{{ form.stripe_product_id }}</div>
+                        </div>
+                    </template>
+                </div>
+            </Overlay>
 
-        <template v-slot:footer>
-            <div class="flex items-center gap-4 w-full justify-center">
-                <fig-button
-                    variant="primary"
-                    @click="onSubmit">{{ $t('Submit') }}</fig-button>
-
-                <fig-button
-                    variant="plain"
-                    @click="hide">{{ $t('Cancel') }}</fig-button>
-            </div>
-        </template>
-    </fig-modal>
+            <DialogFooter class="sm:justify-center">
+                <Button @click="onSubmit">{{ t('Submit') }}</Button>
+                <Button variant="ghost" @click="hide">{{ t('Cancel') }}</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>

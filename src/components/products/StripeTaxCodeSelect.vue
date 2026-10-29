@@ -1,23 +1,7 @@
-
-<script>
-export default {
-    name: 'ProductTaxCodeSelect'
-}
-</script>
-
 <script setup>
-import { ref, watch, onMounted } from 'vue';
-import { useAppStore } from '@/stores/app';
+import { ref, onMounted } from 'vue';
 import useStripeTaxCodes from '@/composables/useStripeTaxCodes.js';
-import FigFormMultiSelect from '@/components/figleaf/form/multiselect/FormMultiSelect.vue';
-import FigFormSelectStripeTaxCode from '@/components/figleaf/form/selectStripeTaxCode/FormSelectStripeTaxCode.vue';
-
-const props = defineProps({
-    clearable: {
-        type: Boolean,
-        default: true
-    }
-});
+import SearchableSelect from '@/components/SearchableSelect.vue';
 
 const { getWhiteList, getDescriptionForTaxCode } = useStripeTaxCodes();
 const whiteList = getWhiteList();
@@ -44,12 +28,11 @@ onMounted(() => {
 
 <template>
     <div>
-        <fig-form-multi-select
+        <SearchableSelect
             v-model="modelValue"
-            mode="single"
             :options="selectOptions"
             @update:modelValue="setDescription" />
 
-        <div class="text-sm text-gray-500 px-2" v-if="selectedDescription">{{ selectedDescription }}</div>
+        <div class="text-sm text-muted-foreground px-2 mt-1" v-if="selectedDescription">{{ selectedDescription }}</div>
     </div>
 </template>
