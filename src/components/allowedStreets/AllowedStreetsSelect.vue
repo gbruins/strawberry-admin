@@ -1,13 +1,7 @@
-<script>
-export default {
-    name: 'AllowedStreetsSelect'
-}
-</script>
-
 <script setup>
 import { computed } from 'vue';
 import { useAppStore } from '@/stores/app.js';
-import FigFormMultiSelect from '@/components/figleaf/form/multiSelect/FormMultiSelect.vue';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 
 const modelValue = defineModel();
 
@@ -22,7 +16,7 @@ const allowedStreetsOptions = computed(() => {
 </script>
 
 <template>
-    <fig-form-multi-select
+    <SearchableSelect
         v-bind="$attrs"
         v-model="modelValue"
         :options="allowedStreetsOptions" />

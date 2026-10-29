@@ -7,14 +7,12 @@ export default {
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
-import FigFormInputNumber from '@/components/figleaf/form/number/FormInputNumber.vue';
-import FigFormCheckbox from '@/components/figleaf/form/checkbox/FormCheckbox.vue';
-import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
-import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigModal from '@/components/figleaf/modal/Modal.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import Overlay from '@/components/Overlay.vue';
 import AllowedStreetsSelect from '@/components/allowedStreets/AllowedStreetsSelect.vue';
 import useApi from '@/composables/useApi';
 import useToast from '@/composables/useToast';
@@ -29,7 +27,7 @@ const $apiUpdate = useApi('addressDiscount.update');
 const $apiRead = useApi('addressDiscount.read');
 const { successToast } = useToast();
 
-const upsertModal = ref(null);
+const open = ref(false);
 const updateId = ref(null);
 
 const form = reactive({
@@ -75,7 +73,7 @@ function onSubmit() {
 }
 
 function hide() {
-    upsertModal.value.hide();
+    open.value = false;
 }
 
 function resetData() {
@@ -94,7 +92,7 @@ function show(id) {
         getById(id);
     }
 
-    upsertModal.value.show();
+    open.value = true;
 }
 
 defineExpose({
@@ -103,59 +101,50 @@ defineExpose({
 </script>
 
 <template>
-    <fig-modal
-        size="lg"
-        ref="upsertModal">
-        <template v-slot:header>
-            {{ updateId ? $t('Update address discount') : $t('Create address discount') }}
-        </template>
+    <Dialog v-model:open="open">
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{{ updateId ? t('Update address discount') : t('Create address discount') }}</DialogTitle>
+            </DialogHeader>
 
-        <fig-overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
-            <fig-label-value-group display="block" density="md">
-                <!-- street number -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Street number') }}</template>
-                    <fig-form-input-text
-                        v-model="form.street_number" />
-                </fig-label-value>
+            <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- street number -->
+                    <div class="grid gap-1.5">
+                        <Label for="address-discount-street-number">{{ t('Street number') }}</Label>
+                        <Input id="address-discount-street-number" v-model="form.street_number" />
+                    </div>
 
-                <!-- street name -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Street name') }}</template>
-                    <allowed-streets-select
-                        v-model="form.allowed_street_id" />
-                </fig-label-value>
+                    <!-- street name -->
+                    <div class="grid gap-1.5">
+                        <Label>{{ t('Street name') }}</Label>
+                        <AllowedStreetsSelect v-model="form.allowed_street_id" />
+                    </div>
 
-                <!-- discount percentage -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Discount percentage') }}</template>
-                    <fig-form-input-number
-                        v-model="form.discount_percent"
-                        :min="0"
-                        :max="100"
-                        :step="1" />
-                </fig-label-value>
+                    <!-- discount percentage -->
+                    <div class="grid gap-1.5">
+                        <Label for="address-discount-percent">{{ t('Discount percentage') }}</Label>
+                        <Input
+                            id="address-discount-percent"
+                            v-model.number="form.discount_percent"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="1" />
+                    </div>
 
-                <!-- active -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Active') }}</template>
-                    <fig-form-checkbox
-                        v-model="form.active"
-                        binary />
-                </fig-label-value>
-            </fig-label-value-group>
-        </fig-overlay>
+                    <!-- active -->
+                    <div class="flex items-center gap-2">
+                        <Checkbox id="address-discount-active" v-model="form.active" />
+                        <Label for="address-discount-active">{{ t('Active') }}</Label>
+                    </div>
+                </div>
+            </Overlay>
 
-        <template v-slot:footer>
-            <div class="flex items-center gap-4 w-full justify-center">
-                <fig-button
-                    variant="primary"
-                    @click="onSubmit">{{ $t('Submit') }}</fig-button>
-
-                <fig-button
-                    variant="plain"
-                    @click="hide">{{ $t('Cancel') }}</fig-button>
-            </div>
-        </template>
-    </fig-modal>
+            <DialogFooter class="sm:justify-center">
+                <Button @click="onSubmit">{{ t('Submit') }}</Button>
+                <Button variant="ghost" @click="hide">{{ t('Cancel') }}</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>

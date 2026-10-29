@@ -1,31 +1,27 @@
 <script setup lang="ts">
-import  { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
-import FigTh from '@/components/figleaf/tableSimple/Th.vue';
-import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
-import FigTd from '@/components/figleaf/tableSimple/Td.vue';
-import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import SortableTableHead from '@/components/SortableTableHead.vue';
 import NumberDisplay from '@/components/NumberDisplay.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
-import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
+import Overlay from '@/components/Overlay.vue';
+import DataPagination from '@/components/DataPagination.vue';
+import BooleanBadge from '@/components/BooleanBadge.vue';
 import Format8601 from '@/components/Format8601.vue';
-import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
+import PopConfirm from '@/components/PopConfirm.vue';
+import { PencilIcon, Trash2Icon } from '@lucide/vue';
 import AddressDiscountsUpsertModal from '@/components/addressDiscounts/AddressDiscountsUpsertModal.vue';
 import StreetNameDisplay from '@/components/allowedStreets/StreetNameDisplay.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
-import usePagination from '@/components/figleaf/pagination/usePagination.js';
 import useToast from '@/composables/useToast';
 
 const $apiSearch = useApi('addressDiscount.search');
 const $apiDelete = useApi('addressDiscount.delete');
 const { t } = useI18n();
 const { successToast } = useToast();
-const { setData, getPaginationApiParams } = usePagination();
 const {
     onSort,
     getSortApiParams,
@@ -37,14 +33,18 @@ const {
 } = useTable();
 
 const upsertModal = ref(null);
+const pageSize = ref(100);
+const pageNumber = ref(1);
 const defaultSort = { by: 'discount_percent', isDesc: true };
+const activeSort = ref({ ...defaultSort });
 
 function fetchData() {
     return $apiSearch.tryCatch(
         async () => {
             const response = await $apiSearch.run({
                 ...getSortApiParams(),
-                ...getPaginationApiParams(),
+                _page: pageNumber.value,
+                _pageSize: pageSize.value
             });
 
             setTableResults(response.data);
@@ -68,14 +68,12 @@ function onDeleteItem(id: string) {
 }
 
 function onTableSort(val: any) {
+    activeSort.value = val;
     onSort(val);
     fetchData();
 }
 
-function onPaginationChange(data: any) {
-    setData(data);
-    fetchData();
-}
+watch([pageSize, pageNumber], fetchData);
 
 onMounted(() => {
     onSort(defaultSort);
@@ -84,97 +82,111 @@ onMounted(() => {
 </script>
 
 <template>
-    <page-title>{{ $t('Address discounts') }}</page-title>
+    <PageTitle>{{ t('Address discounts') }}</PageTitle>
 
     <div class="mb-4 text-right">
-        <fig-button
-            variant="primary"
-            @click="upsertModal.show()">
-            {{ $t('Add address discount') }}
-        </fig-button>
+        <Button @click="upsertModal.show()">
+            {{ t('Add address discount') }}
+        </Button>
     </div>
 
-    <fig-overlay :show="$apiSearch.isLoading.value">
-        <fig-pagination-wrapper
-            bottom
-            :total-rows="tableTotalResultsCount"
-            @pageSize="onPaginationChange"
-            @pageNumber="onPaginationChange">
-            <fig-table-simple
-                striped
-                hover
-                @sort="onTableSort"
-                :default-sort-by="defaultSort.by"
-                :default-sort-desc="defaultSort.isDesc">
-                <template #head>
-                    <fig-tr>
-                        <fig-th sort="street_number"class="text-left">{{ $t('Street number') }}</fig-th>
-                        <fig-th sort="allowed_street_id" class="text-left">{{ $t('Street name') }}</fig-th>
-                        <fig-th sort="discount_percent" class="text-right">{{ $t('Discount') }}</fig-th>
-                        <fig-th sort="active" class="text-left">{{ $t('Active') }}</fig-th>
-                        <fig-th sort="created_at" class="text-left">{{ $t('Created') }}</fig-th>
-                        <fig-th class="text-center">{{ $t('Actions') }}</fig-th>
-                    </fig-tr>
-                </template>
+    <Overlay :show="$apiSearch.isLoading.value">
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <SortableTableHead
+                        sort-key="street_number"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Street number') }}</SortableTableHead>
+                    <SortableTableHead
+                        sort-key="allowed_street_id"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Street name') }}</SortableTableHead>
+                    <SortableTableHead
+                        sort-key="discount_percent"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        class="text-right"
+                        @sort="onTableSort">{{ t('Discount') }}</SortableTableHead>
+                    <SortableTableHead
+                        sort-key="active"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Active') }}</SortableTableHead>
+                    <SortableTableHead
+                        sort-key="created_at"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Created') }}</SortableTableHead>
+                    <TableHead class="text-center">{{ t('Actions') }}</TableHead>
+                </TableRow>
+            </TableHeader>
 
-                <fig-tr v-for="(obj, idx) in tableResults" :key="idx">
+            <TableBody>
+                <TableRow v-for="(obj, idx) in tableResults" :key="idx">
                     <!-- street number -->
-                    <fig-td>
-                        {{ obj.street_number }}
-                    </fig-td>
+                    <TableCell>{{ obj.street_number }}</TableCell>
 
                     <!-- street name -->
-                    <fig-td>
-                        <street-name-display :id="obj.allowed_street_id" />
-                    </fig-td>
+                    <TableCell>
+                        <StreetNameDisplay :id="obj.allowed_street_id" />
+                    </TableCell>
 
                     <!-- Discount -->
-                    <fig-td class="text-right">
-                        <number-display
+                    <TableCell class="text-right">
+                        <NumberDisplay
                             :value="obj.discount_percent ? obj.discount_percent / 100 : 0"
                             format="percent"
                             :config="{ maximumFractionDigits: 2 }" />
-                    </fig-td>
+                    </TableCell>
 
                     <!-- active -->
-                    <fig-td>
-                        <fig-boolean-tag :value="obj.active ?? obj.published ?? false" />
-                    </fig-td>
+                    <TableCell>
+                        <BooleanBadge :value="obj.active ?? obj.published ?? false" />
+                    </TableCell>
 
                     <!-- created -->
-                    <fig-td>
-                        <format8601 :date="obj.created_at" />
-                    </fig-td>
+                    <TableCell>
+                        <Format8601 :date="obj.created_at" />
+                    </TableCell>
 
                     <!-- actions -->
-                    <fig-td>
-                        <div class="flex items-center justify-center w-full gap-4">
-                            <fig-button
-                                variant="plain"
-                                iconOnly
-                                icon="edit"
-                                @click="upsertModal.show(obj.id)" />
+                    <TableCell>
+                        <div class="flex items-center justify-center w-full gap-2">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                @click="upsertModal.show(obj.id)">
+                                <PencilIcon />
+                            </Button>
 
-                            <fig-pop-confirm
-                                @confirm="onDeleteItem(obj.id)">
+                            <PopConfirm @confirm="onDeleteItem(obj.id)">
                                 <template v-slot:reference>
-                                    <fig-button
-                                        variant="danger"
-                                        iconOnly
-                                        icon="trash" />
+                                    <Button variant="destructive" size="icon">
+                                        <Trash2Icon />
+                                    </Button>
                                 </template>
-                                {{ $t('Delete this item?') }}
-                            </fig-pop-confirm>
+                                {{ t('Delete this item?') }}
+                            </PopConfirm>
                         </div>
-                    </fig-td>
-                </fig-tr>
+                    </TableCell>
+                </TableRow>
 
-                <fig-tr-no-results v-if="tableHasNoResults" :colspan="8" />
-            </fig-table-simple>
-        </fig-pagination-wrapper>
-    </fig-overlay>
+                <TableRow v-if="tableHasNoResults">
+                    <TableCell colspan="6" class="text-center text-muted-foreground">{{ t('No data') }}</TableCell>
+                </TableRow>
+            </TableBody>
+        </Table>
 
-    <address-discounts-upsert-modal
+        <DataPagination
+            v-model:page-size="pageSize"
+            v-model:page-number="pageNumber"
+            :total-rows="tableTotalResultsCount" />
+    </Overlay>
+
+    <AddressDiscountsUpsertModal
         ref="upsertModal"
         @success="fetchData" />
 </template>

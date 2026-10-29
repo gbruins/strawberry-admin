@@ -1,22 +1,17 @@
 <script setup lang="ts">
-import  { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/app.js';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
-import FigTh from '@/components/figleaf/tableSimple/Th.vue';
-import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
-import FigTd from '@/components/figleaf/tableSimple/Td.vue';
-import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
-import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
-import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import SortableTableHead from '@/components/SortableTableHead.vue';
+import Overlay from '@/components/Overlay.vue';
+import DataPagination from '@/components/DataPagination.vue';
+import BooleanBadge from '@/components/BooleanBadge.vue';
 import AllowedStreetsUpsertModal from '@/components/allowedStreets/AllowedStreetsUpsertModal.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
-import usePagination from '@/components/figleaf/pagination/usePagination.js';
 import useToast from '@/composables/useToast';
 
 const $apiSearch = useApi('allowedStreet.search');
@@ -24,7 +19,6 @@ const $apiDelete = useApi('allowedStreet.delete');
 const $apiUpdate = useApi('allowedStreet.update');
 const { t } = useI18n();
 const { successToast } = useToast();
-const { setData, getPaginationApiParams } = usePagination();
 const appStore = useAppStore();
 const {
     onSort,
@@ -37,14 +31,18 @@ const {
 } = useTable();
 
 const upsertModal = ref(null);
+const pageSize = ref(100);
+const pageNumber = ref(1);
 const defaultSort = { by: 'street_name', isDesc: false };
+const activeSort = ref({ ...defaultSort });
 
 function fetchData() {
     return $apiSearch.tryCatch(
         async () => {
             const response = await $apiSearch.run({
                 ...getSortApiParams(),
-                ...getPaginationApiParams(),
+                _page: pageNumber.value,
+                _pageSize: pageSize.value
             });
 
             setTableResults(response.data);
@@ -81,19 +79,18 @@ function toggleActive(allowedStreet) {
             });
 
             appStore.updateAllowedStreetsState();
-            fetchData();}
+            fetchData();
+        }
     );
 }
 
 function onTableSort(val) {
+    activeSort.value = val;
     onSort(val);
     fetchData();
 }
 
-function onPaginationChange(data) {
-    setData(data);
-    fetchData();
-}
+watch([pageSize, pageNumber], fetchData);
 
 onMounted(() => {
     onSort(defaultSort);
@@ -102,82 +99,59 @@ onMounted(() => {
 </script>
 
 <template>
-    <page-title>{{ $t('Allowed streets') }}</page-title>
+    <PageTitle>{{ t('Allowed streets') }}</PageTitle>
 
-<!--
-    <div class="mb-4 text-right">
-        <fig-button
-            variant="primary"
-            @click="upsertModal.show()">
-            {{ $t('Add allowed street') }}
-        </fig-button>
-    </div>
--->
+    <Overlay :show="$apiSearch.isLoading.value">
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <SortableTableHead
+                        sort-key="street_name"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Street name') }}</SortableTableHead>
+                    <SortableTableHead
+                        sort-key="active"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Active') }}</SortableTableHead>
+                    <TableHead class="text-center">{{ t('Actions') }}</TableHead>
+                </TableRow>
+            </TableHeader>
 
-    <fig-overlay :show="$apiSearch.isLoading.value">
-        <fig-pagination-wrapper
-            bottom
-            :total-rows="tableTotalResultsCount"
-            @pageSize="onPaginationChange"
-            @pageNumber="onPaginationChange">
-            <fig-table-simple
-                striped
-                hover
-                @sort="onTableSort"
-                :default-sort-by="defaultSort.by"
-                :default-sort-desc="defaultSort.isDesc">
-                <template #head>
-                    <fig-tr>
-                        <fig-th sort="street_name" class="text-left">{{ $t('Street name') }}</fig-th>
-                        <fig-th sort="active" class="text-left">{{ $t('Active') }}</fig-th>
-                        <fig-th class="text-center">{{ $t('Actions') }}</fig-th>
-                    </fig-tr>
-                </template>
-
-                <fig-tr v-for="(obj, idx) in tableResults" :key="idx">
+            <TableBody>
+                <TableRow v-for="(obj, idx) in tableResults" :key="idx">
                     <!-- street name -->
-                    <fig-td>
-                        {{ obj.street_name }}
-                    </fig-td>
+                    <TableCell>{{ obj.street_name }}</TableCell>
 
                     <!-- active -->
-                    <fig-td>
-                        <fig-boolean-tag :value="obj.active" />
-                    </fig-td>
+                    <TableCell>
+                        <BooleanBadge :value="obj.active" />
+                    </TableCell>
 
                     <!-- actions -->
-                    <fig-td>
-                        <div class="flex items-center justify-center w-full gap-4">
-                            <fig-button
-                                :variant="obj.active ? 'danger' : 'plain'"
-                                @click="toggleActive(obj)">{{ $t(obj.active ? 'Deactivate' : 'Activate') }}</fig-button>
-
-                            <!-- <fig-button
-                                variant="plain"
-                                iconOnly
-                                icon="edit"
-                                @click="upsertModal.show(obj.id)" /> -->
-
-                            <!-- <fig-pop-confirm
-                                @confirm="onDeleteItem(obj.id)">
-                                <template v-slot:reference>
-                                    <fig-button
-                                        variant="danger"
-                                        iconOnly
-                                        icon="trash" />
-                                </template>
-                                {{ $t('Delete this item?') }}
-                            </fig-pop-confirm> -->
+                    <TableCell>
+                        <div class="flex items-center justify-center w-full gap-2">
+                            <Button
+                                :variant="obj.active ? 'destructive' : 'outline'"
+                                @click="toggleActive(obj)">{{ t(obj.active ? 'Deactivate' : 'Activate') }}</Button>
                         </div>
-                    </fig-td>
-                </fig-tr>
+                    </TableCell>
+                </TableRow>
 
-                <fig-tr-no-results v-if="tableHasNoResults" :colspan="8" />
-            </fig-table-simple>
-        </fig-pagination-wrapper>
-    </fig-overlay>
+                <TableRow v-if="tableHasNoResults">
+                    <TableCell colspan="3" class="text-center text-muted-foreground">{{ t('No data') }}</TableCell>
+                </TableRow>
+            </TableBody>
+        </Table>
 
-    <allowed-streets-upsert-modal
+        <DataPagination
+            v-model:page-size="pageSize"
+            v-model:page-number="pageNumber"
+            :total-rows="tableTotalResultsCount" />
+    </Overlay>
+
+    <AllowedStreetsUpsertModal
         ref="upsertModal"
         @success="fetchData" />
 </template>
