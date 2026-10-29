@@ -6,7 +6,7 @@ import { useAppStore } from '@/stores/app.js';
 import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
 import FigButton from '@/components/figleaf/button/Button.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 import useApi from '@/composables/useApi';
 
 const $apiLogin = useApi('auth.login');

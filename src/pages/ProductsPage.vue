@@ -18,7 +18,7 @@ import ProductTypeDisplay from '@/components/productTypes/ProductTypeDisplay.vue
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
 import usePagination from '@/components/figleaf/pagination/usePagination.js';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const $apiSearch = useApi('product.search');
 const $apiDelete = useApi('product.delete');

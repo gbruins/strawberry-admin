@@ -12,7 +12,7 @@ import FigModal from '@/components/figleaf/modal/Modal.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import FigFormSelectNative from '@/components/figleaf/form/selectNative/FormSelectNative.vue';
 import useApi from '@/composables/useApi';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 type Item = { id: string, title: string, published: boolean };
 

@@ -16,7 +16,7 @@ import FigButton from '@/components/figleaf/button/Button.vue';
 import FigModal from '@/components/figleaf/modal/Modal.vue';
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import useApi from '@/composables/useApi';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const emit = defineEmits([
     'success'

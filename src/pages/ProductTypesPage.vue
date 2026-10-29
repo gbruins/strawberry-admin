@@ -17,7 +17,7 @@ import ProductTypeUpsertModal from '@/components/productTypes/ProductTypeUpsertM
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
 import usePagination from '@/components/figleaf/pagination/usePagination.js';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const $apiSearch = useApi('productType.search');
 const $apiDelete = useApi('productType.delete');

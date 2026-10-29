@@ -19,7 +19,7 @@ import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import FigFormSelectNative from '@/components/figleaf/form/selectNative/FormSelectNative.vue';
 import FigFormInputDate from '@/components/figleaf/form/date/FormInputDate.vue';
 import useApi from '@/composables/useApi';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const emit = defineEmits([
     'success'

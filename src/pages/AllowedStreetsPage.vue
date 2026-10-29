@@ -17,7 +17,7 @@ import AllowedStreetsUpsertModal from '@/components/allowedStreets/AllowedStreet
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
 import usePagination from '@/components/figleaf/pagination/usePagination.js';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const $apiSearch = useApi('allowedStreet.search');
 const $apiDelete = useApi('allowedStreet.delete');

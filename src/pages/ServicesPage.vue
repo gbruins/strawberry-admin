@@ -16,7 +16,7 @@ import ServiceUpsertModal from '@/components/services/ServiceUpsertModal.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
 import usePagination from '@/components/figleaf/pagination/usePagination.js';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const $apiSearch = useApi('service.search');
 const $apiMenus = useApi('serviceMenu.search');

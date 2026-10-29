@@ -16,7 +16,7 @@ import FigFormTextarea from '@/components/figleaf/form/textarea/FormTextarea.vue
 import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
 import Format8601 from '@/components/Format8601.vue';
 import IconLabel from '@/components/IconLabel.vue';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const props = defineProps({
     cart: {
