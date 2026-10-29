@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import Overlay from '@/components/Overlay.vue';
 
 const props = defineProps({
     loading: {
@@ -16,9 +16,9 @@ const props = defineProps({
         </div>
 
         <div>
-            <fig-overlay :show="props.loading">
+            <Overlay :show="props.loading">
                 <slot />
-            </fig-overlay>
+            </Overlay>
         </div>
     </div>
 </template>

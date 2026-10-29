@@ -8,14 +8,13 @@ export default {
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import useApi from '@/composables/useApi.js';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigIcon from '@/components/figleaf/icon/FigIcon.vue';
-import FigTextCard from '@/components/figleaf/textCard/TextCard.vue';
-import FigRowBuilder from '@/components/figleaf/rowBuilder/RowBuilder.vue';
-import FigFormTextarea from '@/components/figleaf/form/textarea/FormTextarea.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import { SaveIcon, PlusIcon, Trash2Icon, StickyNoteIcon } from '@lucide/vue';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import Overlay from '@/components/Overlay.vue';
+import PopConfirm from '@/components/PopConfirm.vue';
 import Format8601 from '@/components/Format8601.vue';
-import IconLabel from '@/components/IconLabel.vue';
 import useToast from '@/composables/useToast';
 
 const props = defineProps({
@@ -64,57 +63,62 @@ watch(
 </script>
 
 <template>
-    <fig-text-card variant="white">
-        <template v-slot:header_left>
-            <icon-label>
-                <template v-slot:left>
-                    <fig-icon
-                        icon="notes"
-                        width="26"
-                        height="26"
-                        :stroke-width="1" />
-                </template>
-                <div class="text-lg font-bold">{{ $t('Notes') }}</div>
-            </icon-label>
-        </template>
+    <Card>
+        <CardHeader class="border-b">
+            <CardTitle class="flex items-center gap-2 text-lg font-bold">
+                <StickyNoteIcon class="size-6" />
+                {{ t('Notes') }}
+            </CardTitle>
+        </CardHeader>
 
-        <div class="w-full">
-            <div v-if="cart?.customer_note" class="mb-4" data-test="customer-note">
-                <div class="text-sm font-bold">{{ $t('Customer note') }}</div>
-                <p class="whitespace-pre-wrap break-words">{{ cart.customer_note }}</p>
-            </div>
+        <CardContent>
+            <div class="w-full">
+                <div v-if="cart?.customer_note" class="mb-4" data-test="customer-note">
+                    <div class="text-sm font-bold">{{ t('Customer note') }}</div>
+                    <p class="whitespace-pre-wrap break-words">{{ cart.customer_note }}</p>
+                </div>
 
-            <fig-overlay :show="$apiUpdate.isLoading.value">
-                <fig-row-builder
-                    v-model="cartNotes"
-                    @add="onAddNote"
-                    @remove="onRemoveNote"
-                    :sortable="false"
-                    class="w-full">
-                    <template v-slot:buttonLabel>{{ $t('Add note') }}</template>
-
-                    <template v-slot:default="slotScope">
-                        <div class="flex gap-2 w-full">
-                            <div class="whitespace-nowrap">
-                                <fig-format-8601 :date="slotScope.rowBuilder.created_at" />
+                <Overlay :show="$apiUpdate.isLoading.value">
+                    <div class="flex flex-col gap-2 w-full">
+                        <div
+                            v-for="(row, index) in cartNotes"
+                            :key="index"
+                            class="flex gap-2 w-full items-start">
+                            <div class="whitespace-nowrap pt-2 text-sm text-muted-foreground">
+                                <Format8601 :date="row.created_at" />
                             </div>
-                            <fig-form-textarea
-                                v-model="slotScope.rowBuilder.note"
-                                class="flex-grow"
-                                rows="1" />
-                        </div>
-                    </template>
 
-                    <template v-slot:addButtonRight>
-                        <fig-button
-                            v-if="cartNotes.length"
-                            @click="onSaveNotes"
-                            variant="primary"
-                            size="sm"
-                            icon="floppy">{{ $t('Save notes') }}</fig-button>
-                    </template>
-                </fig-row-builder>
-            </fig-overlay>
-        </div>
-    </fig-text-card>
+                            <Textarea v-model="row.note" class="flex-grow" rows="1" />
+
+                            <PopConfirm @confirm="onRemoveNote(index)">
+                                <template v-slot:reference>
+                                    <Button variant="ghost" size="icon" class="shrink-0">
+                                        <Trash2Icon />
+                                    </Button>
+                                </template>
+                                {{ t('Delete this row?') }}
+                            </PopConfirm>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center pt-2" :class="{ 'pt-2': cartNotes.length }">
+                        <Button variant="outline" size="sm" class="mr-3" @click="onAddNote">
+                            <PlusIcon />
+                            {{ t('Add note') }}
+                        </Button>
+
+                        <div class="flex-grow">
+                            <Button
+                                v-if="cartNotes.length"
+                                size="sm"
+                                @click="onSaveNotes">
+                                <SaveIcon />
+                                {{ t('Save notes') }}
+                            </Button>
+                        </div>
+                    </div>
+                </Overlay>
+            </div>
+        </CardContent>
+    </Card>
 </template>

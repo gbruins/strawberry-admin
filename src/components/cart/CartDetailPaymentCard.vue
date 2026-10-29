@@ -5,13 +5,10 @@ export default {
 </script>
 
 <script setup>
-import FigCardLastFour from '@/components/figleaf/cardLastFour/CardLastFour.vue';
-import FigTextCard from '@/components/figleaf/textCard/TextCard.vue';
-import Format8601 from '@/components/Format8601.vue';
-import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
-import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-import FigIcon from '@/components/figleaf/icon/FigIcon.vue';
-import IconLabel from '@/components/IconLabel.vue';
+import { useI18n } from 'vue-i18n';
+import { CreditCardIcon } from '@lucide/vue';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import CardLastFour from '@/components/CardLastFour.vue';
 
 const props = defineProps({
     cart: {
@@ -22,39 +19,32 @@ const props = defineProps({
         type: Object
     }
 });
+
+const { t } = useI18n();
 </script>
 
 <template>
-    <fig-text-card variant="white">
-        <template v-slot:header_left>
-            <icon-label>
-                <template v-slot:left>
-                    <fig-icon
-                        icon="credit-card"
-                        width="26"
-                        height="26"
-                        :stroke-width="1" />
-                </template>
-                <div class="text-lg font-bold">{{ $t('Payment') }}</div>
-            </icon-label>
-        </template>
+    <Card>
+        <CardHeader class="border-b">
+            <CardTitle class="flex items-center gap-2 text-lg font-bold">
+                <CreditCardIcon class="size-6" />
+                {{ t('Payment') }}
+            </CardTitle>
+        </CardHeader>
 
-        <fig-label-value-group density="md" display="table" class="text-sm">
-            <!-- payment method -->
-            <fig-label-value>
-                <template v-slot:label>{{ $t('Payment method') }}:</template>
-                <fig-card-last-four
+        <CardContent>
+            <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm items-center">
+                <!-- payment method -->
+                <div class="text-muted-foreground">{{ t('Payment method') }}:</div>
+                <CardLastFour
                     :type="payment?.payment_method_details?.card?.brand"
                     :last-four="payment?.payment_method_details?.card?.last4" />
-            </fig-label-value>
 
-            <fig-label-value>
-                <template v-slot:label>
-                    {{ $t('Stripe details') }}:
-                </template>
+                <div class="text-muted-foreground">{{ t('Stripe details') }}:</div>
                 <a :href="`https://dashboard.stripe.com/payments/${cart?.stripe_payment_intent_id}`"
-                    target="_blank">{{ $t('View') }}</a>
-            </fig-label-value>
-        </fig-label-value-group>
-    </fig-text-card>
+                    target="_blank"
+                    class="text-primary underline-offset-4 hover:underline">{{ t('View') }}</a>
+            </div>
+        </CardContent>
+    </Card>
 </template>
