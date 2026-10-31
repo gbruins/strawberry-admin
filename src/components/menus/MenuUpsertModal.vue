@@ -9,7 +9,7 @@ import { ref, reactive, computed, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, maxLength } from '@vuelidate/validators';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -140,6 +140,7 @@ defineExpose({ show });
         <DialogContent class="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>{{ updateId ? t('Update menu') : t('Create menu') }}</DialogTitle>
+                <DialogDescription class="sr-only">{{ updateId ? t('Update menu') : t('Create menu') }}</DialogDescription>
             </DialogHeader>
 
             <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
@@ -148,8 +149,8 @@ defineExpose({ show });
                         <Label for="menu-title">{{ t('Title') }}</Label>
                         <Input id="menu-title" v-model="form.title" />
 
-                        <div v-if="v$.title.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
-                        <div v-else-if="v$.title.maxLength.$invalid" class="text-sm text-destructive">{{ t('must be at most {max} characters', { max: 255 }) }}</div>
+                        <div v-if="v$.title.$dirty && v$.title.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                        <div v-else-if="v$.title.$dirty && v$.title.maxLength.$invalid" class="text-sm text-destructive">{{ t('must be at most {max} characters', { max: 255 }) }}</div>
                     </div>
 
                     <div v-if="duplicateTitle" class="text-sm text-amber-700" data-test="duplicate-title">
@@ -160,7 +161,7 @@ defineExpose({ show });
                         <Label for="menu-description">{{ t('Description') }}</Label>
                         <Textarea id="menu-description" v-model="form.description" />
 
-                        <div v-if="v$.description.maxLength.$invalid" class="text-sm text-destructive">{{ t('must be at most {max} characters', { max: 2000 }) }}</div>
+                        <div v-if="v$.description.$dirty && v$.description.maxLength.$invalid" class="text-sm text-destructive">{{ t('must be at most {max} characters', { max: 2000 }) }}</div>
                     </div>
 
                     <div class="flex items-center gap-2">

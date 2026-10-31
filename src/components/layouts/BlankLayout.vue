@@ -3,9 +3,7 @@
 
 
 <template>
-    <div class="flex min-h-screen relative text-sm">
-        <div class="w-full md:p-6 sm:p-4">
-            <slot />
-        </div>
+    <div class="flex min-h-screen items-center justify-center relative text-sm p-4">
+        <slot />
     </div>
 </template>

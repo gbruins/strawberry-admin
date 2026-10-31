@@ -9,7 +9,7 @@ import { ref, reactive, computed, onMounted, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minValue } from '@vuelidate/validators';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -147,6 +147,8 @@ function resetData() {
     form.inventory_count = 0;
     form.service_menu_id = null;
     form.max_per_order = 4;
+
+    v$.value.$reset();
 }
 
 function show(id) {
@@ -169,6 +171,7 @@ defineExpose({
         <DialogContent class="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>{{ updateId ? t('Update service') : t('Create service') }}</DialogTitle>
+                <DialogDescription class="sr-only">{{ updateId ? t('Update service') : t('Create service') }}</DialogDescription>
             </DialogHeader>
 
             <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
@@ -181,7 +184,7 @@ defineExpose({
                             v-model="form.start_at"
                             @update:modelValue="onStartAtChange" />
 
-                        <div v-if="v$.start_at.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                        <div v-if="v$.start_at.$dirty && v$.start_at.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
                     </div>
 
                     <!-- end at -->
@@ -190,8 +193,8 @@ defineExpose({
 
                         <DateTimePicker v-model="form.end_at" />
 
-                        <div v-if="v$.end_at.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
-                        <div v-else-if="v$.end_at.afterStartAt.$invalid" class="text-sm text-destructive">{{ t('must be after "Start at"') }}</div>
+                        <div v-if="v$.end_at.$dirty && v$.end_at.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                        <div v-else-if="v$.end_at.$dirty && v$.end_at.afterStartAt.$invalid" class="text-sm text-destructive">{{ t('must be after "Start at"') }}</div>
                     </div>
 
                     <!-- notes -->
@@ -211,8 +214,8 @@ defineExpose({
                             min="0"
                             step="1" />
 
-                        <div v-if="v$.inventory_count.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
-                        <div v-else-if="v$.inventory_count.minValue.$invalid" class="text-sm text-destructive">{{ t('must be at least {min}', { min: 1 }) }}</div>
+                        <div v-if="v$.inventory_count.$dirty && v$.inventory_count.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                        <div v-else-if="v$.inventory_count.$dirty && v$.inventory_count.minValue.$invalid" class="text-sm text-destructive">{{ t('must be at least {min}', { min: 1 }) }}</div>
                     </div>
 
                     <!-- menu -->
@@ -238,8 +241,8 @@ defineExpose({
                             min="1"
                             step="1" />
 
-                        <div v-if="v$.max_per_order.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
-                        <div v-else-if="v$.max_per_order.minValue.$invalid" class="text-sm text-destructive">{{ t('must be at least {min}', { min: 1 }) }}</div>
+                        <div v-if="v$.max_per_order.$dirty && v$.max_per_order.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                        <div v-else-if="v$.max_per_order.$dirty && v$.max_per_order.minValue.$invalid" class="text-sm text-destructive">{{ t('must be at least {min}', { min: 1 }) }}</div>
                     </div>
                 </div>
             </Overlay>

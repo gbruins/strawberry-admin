@@ -9,6 +9,7 @@ import SortableTableHead from '@/components/SortableTableHead.vue';
 import Overlay from '@/components/Overlay.vue';
 import DataPagination from '@/components/DataPagination.vue';
 import BooleanBadge from '@/components/BooleanBadge.vue';
+import { PencilIcon } from '@lucide/vue';
 import AllowedStreetsUpsertModal from '@/components/allowedStreets/AllowedStreetsUpsertModal.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
@@ -101,6 +102,12 @@ onMounted(() => {
 <template>
     <PageTitle>{{ t('Allowed streets') }}</PageTitle>
 
+    <div class="mb-4 text-right">
+        <Button @click="upsertModal.show()">
+            {{ t('Add allowed street') }}
+        </Button>
+    </div>
+
     <Overlay :show="$apiSearch.isLoading.value">
         <Table>
             <TableHeader>
@@ -132,6 +139,13 @@ onMounted(() => {
                     <!-- actions -->
                     <TableCell>
                         <div class="flex items-center justify-center w-full gap-2">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                @click="upsertModal.show(obj.id)">
+                                <PencilIcon />
+                            </Button>
+
                             <Button
                                 :variant="obj.active ? 'destructive' : 'outline'"
                                 @click="toggleActive(obj)">{{ t(obj.active ? 'Deactivate' : 'Activate') }}</Button>

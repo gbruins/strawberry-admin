@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { ChevronUpIcon, ChevronDownIcon, Trash2Icon } from '@lucide/vue';
@@ -110,6 +110,7 @@ defineExpose({ show });
         <DialogContent class="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>{{ t('Menu products') }}: {{ menuTitle }}</DialogTitle>
+                <DialogDescription class="sr-only">{{ t('Menu products') }}: {{ menuTitle }}</DialogDescription>
             </DialogHeader>
 
             <Overlay :show="$apiProducts.isLoading.value || $apiSave.isLoading.value">

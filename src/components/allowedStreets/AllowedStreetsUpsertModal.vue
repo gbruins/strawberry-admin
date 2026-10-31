@@ -8,7 +8,7 @@ export default {
 import { ref, reactive, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/app.js';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -101,6 +101,7 @@ defineExpose({
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>{{ updateId ? t('Update allowed street') : t('Create allowed street') }}</DialogTitle>
+                <DialogDescription class="sr-only">{{ updateId ? t('Update allowed street') : t('Create allowed street') }}</DialogDescription>
             </DialogHeader>
 
             <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
