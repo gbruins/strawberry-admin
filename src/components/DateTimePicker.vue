@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
+import { useAppStore } from '@/stores/app';
 
 const props = defineProps({
     modelValue: {
@@ -15,9 +16,11 @@ const props = defineProps({
         default: null
     },
 
+    // Defaults to the logged-in admin's own tenant (specs/004-multi-tenant-supabase T033) —
+    // only pass this explicitly to edit/display a time in some OTHER zone.
     timezone: {
         type: String,
-        default: 'America/Los_Angeles'
+        default: null
     },
 
     clearable: {
@@ -34,16 +37,19 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const { t } = useI18n();
+const appStore = useAppStore();
 const open = ref(false);
 const calendarDate = ref(null);
 const timeValue = ref('00:00');
+
+const effectiveTimezone = computed(() => props.timezone || appStore.timezone || 'UTC');
 
 function zonedPartsFromIso(iso) {
     if (!iso) {
         return null;
     }
 
-    const zoned = toZonedTime(new Date(iso), props.timezone);
+    const zoned = toZonedTime(new Date(iso), effectiveTimezone.value);
 
     return {
         date: new CalendarDate(zoned.getFullYear(), zoned.getMonth() + 1, zoned.getDate()),
@@ -74,7 +80,7 @@ function emitFromParts() {
     // which fromZonedTime reinterprets as that timezone's instant.
     const wallClock = new Date(year, month - 1, day, hours || 0, minutes || 0, 0);
 
-    emit('update:modelValue', fromZonedTime(wallClock, props.timezone).toISOString());
+    emit('update:modelValue', fromZonedTime(wallClock, effectiveTimezone.value).toISOString());
 }
 
 function onCalendarSelect(val) {
@@ -99,7 +105,7 @@ const displayLabel = computed(() => {
     }
 
     const fmt = props.enableTime ? 'MMM d, yyyy h:mm a' : 'MMM d, yyyy';
-    return formatInTimeZone(new Date(props.modelValue), props.timezone, fmt);
+    return formatInTimeZone(new Date(props.modelValue), effectiveTimezone.value, fmt);
 });
 </script>
 

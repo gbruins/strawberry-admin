@@ -2,19 +2,22 @@
 import { onMounted } from 'vue';
 import { useAppStore } from '@/stores/app.js';
 import { useRouter } from 'vue-router';
-import useApi from '@/composables/useApi';
+import { supabase } from '@/plugins/supabase';
 
-const $apiLogout = useApi('auth.logout');
 const appStore = useAppStore();
 const router = useRouter();
 
-function logout() {
-    return $apiLogout.tryCatch(
-        async () => {
-            const response = await $apiLogout.run();
-            appStore.loggedInUser = null;
-        }
-    );
+async function logout() {
+    try {
+        await supabase.auth.signOut();
+    }
+    catch (error) {
+        console.error('Failed to sign out of Supabase', error);
+    }
+    finally {
+        appStore.clearSession();
+        router.push({ name: 'login' });
+    }
 }
 
 onMounted(() => {

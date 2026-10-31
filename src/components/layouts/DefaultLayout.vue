@@ -36,11 +36,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/stores/app.js';
-import useApi from '@/composables/useApi';
+import { supabase } from '@/plugins/supabase';
 import useBroadcastChannels from '@/composables/useBroadcastChannels';
 
 const { t } = useI18n();
-const $apiLogout = useApi('auth.logout');
 const appStore = useAppStore();
 const router = useRouter();
 const route = useRoute();
@@ -58,17 +57,20 @@ const navItems = [
 ];
 
 function onLogout() {
-    appStore.loggedInUser = null;
+    appStore.clearSession();
     router.push({ name: 'login' });
 }
 
-function logout() {
-    return $apiLogout.tryCatch(
-        async () => {
-            await $apiLogout.run();
-            onLogout();
-        }
-    );
+async function logout() {
+    try {
+        await supabase.auth.signOut();
+    }
+    catch (error) {
+        console.error('Failed to sign out of Supabase', error);
+    }
+    finally {
+        onLogout();
+    }
 }
 
 onMounted(() => {

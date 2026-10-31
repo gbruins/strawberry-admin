@@ -24,16 +24,20 @@ export default {
     'An unexpected error occurred.': 'An unexpected error occurred.',
     'Apply filters': 'Apply filters',
 
+    'Back to login': 'Back to login',
     'Billing': 'Billing',
     'Billing address': 'Billing address',
     'Browse': 'Browse',
 
     'cancel': 'cancel',
+    'Cancel': 'Cancel',
     'Cart': 'Cart',
     'Cart items': 'Cart items',
     'Cart status': 'Cart status',
     'Carts': 'Carts',
+    'Check your email': 'Check your email',
     'Closed': 'Closed',
+    'Confirm password': 'Confirm password',
     'Create address discount': 'Create address discount',
     'Create allowed street': 'Create allowed street',
     'Create product': 'Create product',
@@ -51,6 +55,8 @@ export default {
     'Discount percentage': 'Discount percentage',
     'Displaying {start} - {end}': 'Displaying {start} - {end}',
     'Dough count': 'Dough count',
+    'Email': 'Email',
+    'End at': 'End at',
     'Menu': 'Menu',
     'Menus': 'Menus',
     'Menu deleted': 'Menu deleted',
@@ -80,9 +86,12 @@ export default {
     'Error': 'Error',
 
     'false': 'false',
+    'Forgot password': 'Forgot password',
+    'Forgot your password?': 'Forgot your password?',
 
     'Grand total': 'Grand total',
 
+    'If an account exists for that email, a reset link is on its way.': 'If an account exists for that email, a reset link is on its way.',
     'Invalid username or password': 'Invalid username or password',
     'Item deleted successfully': 'Item deleted successfully',
 
@@ -93,6 +102,7 @@ export default {
     'must be at least {min}': 'must be at least {min}',
 
     'Name': 'Name',
+    'New password': 'New password',
     'No data': 'No data',
     'Notes': 'Notes',
     'Notes updated successfully': 'Notes updated successfully',
@@ -101,6 +111,7 @@ export default {
     'Open': 'Open',
 
     'Password': 'Password',
+    'Password updated': 'Password updated',
     'Payment': 'Payment',
     'Payment method': 'Payment method',
     'Price': 'Price',
@@ -117,10 +128,16 @@ export default {
     'required': 'required',
 
     'Save notes': 'Save notes',
+    'Search': 'Search',
     'See all tax codes': 'See all tax codes',
     'See common tax codes': 'See common tax codes',
+    'Select date': 'Select date',
+    'Select...': 'Select...',
+    'Send reset link': 'Send reset link',
     'Service': 'Service',
     'Service saved successfully': 'Service saved successfully',
+    'Set a new password': 'Set a new password',
+    'Start at': 'Start at',
     'Status': 'Status',
     'Street name': 'Street name',
     'Street number': 'Street number',
@@ -139,6 +156,7 @@ export default {
 
     'Update address discount': 'Update address discount',
     'Update allowed street': 'Update allowed street',
+    'Update password': 'Update password',
     'Update product': 'Update product',
     'Update product type': 'Update product type',
     'Update service': 'Update service',
@@ -146,6 +164,8 @@ export default {
 
     'View': 'View',
     'view raw data': 'view raw data',
+
+    'You can now log in with your new password.': 'You can now log in with your new password.',
 
     // Date formatting
     'date.format.mdy': 'dd/LLL/yy',

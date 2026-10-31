@@ -10,6 +10,7 @@ import Cart from '@/api/cart';
 import Service from '@/api/service';
 import ServiceMenu from '@/api/service_menu';
 import useBroadcastChannels from '@/composables/useBroadcastChannels';
+import { supabase } from '@/plugins/supabase';
 
 export let axiosInstance = null;
 
@@ -21,10 +22,20 @@ export default {
 
         axiosInstance = axios.create({
             baseURL: baseURL,
-            withCredentials: true, // Send cookies with requests
             headers: {
                 'Content-Type': 'application/json',
             },
+        });
+
+        // Supabase Auth bearer token instead of the old cookie session (contracts/admin-auth.md).
+        axiosInstance.interceptors.request.use(async (config) => {
+            const { data } = await supabase.auth.getSession();
+
+            if (data?.session?.access_token) {
+                config.headers.Authorization = `Bearer ${data.session.access_token}`;
+            }
+
+            return config;
         });
 
         const utils = {};
@@ -145,6 +156,22 @@ export default {
                     switch (errorCode) {
                         case 401:
                             console.error('Unauthorized');
+                            // Sign out of Supabase here directly, but this code does NOT also
+                            // call appStore.clearSession() — that happens indirectly, via the
+                            // 'logout' broadcast below being picked up by DefaultLayout.vue's
+                            // OWN separate BroadcastChannel listener (mounted on every
+                            // authenticated route), which calls clearSession() + redirects.
+                            // Confirmed this actually works (independent QA review flagged it
+                            // as worth checking): BroadcastChannel's "a channel doesn't receive
+                            // its own posted messages" exclusion is per-OBJECT/port, not
+                            // per-tab — getLogoutChannel() returns a fresh instance each call,
+                            // so this tab's own DefaultLayout listener (a different object) DOES
+                            // receive it. This is fragile: if DefaultLayout's mount lifecycle or
+                            // this channel-instance pattern ever changes, this tab's own state
+                            // could stop clearing on a 401. If that behavior is ever touched,
+                            // consider calling clearSession() directly here instead of relying
+                            // on it.
+                            supabase.auth.signOut();
                             postToChannel({ type: 'logout' }, getLogoutChannel());
                             break;
                     }

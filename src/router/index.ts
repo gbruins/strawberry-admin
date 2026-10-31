@@ -38,6 +38,20 @@ const router = createRouter({
         },
 
         {
+            path: '/forgot-password',
+            name: 'forgot_password',
+            meta: { layout: BlankLayout },
+            component: () => import('@/pages/ForgotPasswordPage.vue'),
+        },
+
+        {
+            path: '/reset-password',
+            name: 'reset_password',
+            meta: { layout: BlankLayout },
+            component: () => import('@/pages/ResetPasswordPage.vue'),
+        },
+
+        {
             path: '/carts',
             name: 'carts',
             component: () => import('@/pages/CartsPage.vue'),
@@ -77,21 +91,27 @@ const router = createRouter({
 
 
 // Global navigation guard for authentication
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     const appStore = useAppStore();
 
     // List of routes that don't require auth
-    const publicPages = ['login'];
+    const publicPages = ['login', 'forgot_password', 'reset_password'];
     const authRequired = !publicPages.includes(to.name);
 
     if (!authRequired) {
         return next();
     }
 
-    // If not logged in, redirect to login
-    // if (!appStore.loggedInUser) {
-    //     return next({ name: 'login' });
-    // }
+    // In-memory Pinia state is lost on a hard refresh; Supabase's own client persists the
+    // session in localStorage, so restore from there before deciding (idempotent — see
+    // stores/app.js's restoreSession, safe to call on every navigation).
+    if (!appStore.loggedInUser) {
+        await appStore.restoreSession();
+    }
+
+    if (!appStore.loggedInUser) {
+        return next({ name: 'login' });
+    }
 
     next();
 });
