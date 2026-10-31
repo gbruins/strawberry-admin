@@ -167,6 +167,20 @@ export default {
 
     'You can now log in with your new password.': 'You can now log in with your new password.',
 
+    // Email alerts (specs/005-email-open-alerts)
+    'Subscribers': 'Subscribers',
+    'Active subscribers': 'Active subscribers',
+    'Subscribed': 'Subscribed',
+    'Unsubscribed': 'Unsubscribed',
+    'Remove this subscriber?': 'Remove this subscriber?',
+    'Subscriber removed': 'Subscriber removed',
+    'Notified': 'Notified',
+    'No subscribers to notify yet': 'No subscribers to notify yet',
+    'Notification sent': 'Notification sent',
+    'Sent to {count} subscriber(s)': 'Sent to {count} subscriber(s)',
+    'Notify subscribers about this opening?': 'Notify subscribers about this opening?',
+    'Notify subscribers again about this opening?': 'Notify subscribers again about this opening?',
+
     // Date formatting
     'date.format.mdy': 'dd/LLL/yy',
     'date.format.mdy_hm': 'dd/LLL/yy h:mm a',

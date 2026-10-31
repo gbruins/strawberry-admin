@@ -11,6 +11,7 @@ import {
     TagIcon,
     MapPinIcon,
     BadgePercentIcon,
+    MailIcon,
     LogOutIcon,
     ChevronsUpDownIcon
 } from '@lucide/vue';
@@ -53,7 +54,8 @@ const navItems = [
     { name: 'products', label: 'Products', icon: PizzaIcon },
     { name: 'product_types', label: 'Product types', icon: TagIcon },
     { name: 'allowed_streets', label: 'Allowed streets', icon: MapPinIcon },
-    { name: 'address_discounts', label: 'Address discounts', icon: BadgePercentIcon }
+    { name: 'address_discounts', label: 'Address discounts', icon: BadgePercentIcon },
+    { name: 'subscribers', label: 'Subscribers', icon: MailIcon }
 ];
 
 function onLogout() {

@@ -24,6 +24,12 @@ const router = createRouter({
         },
 
         {
+            path: '/subscribers',
+            name: 'subscribers',
+            component: () => import('@/pages/SubscribersPage.vue'),
+        },
+
+        {
             path: '/login',
             name: 'login',
             meta: { layout: BlankLayout },

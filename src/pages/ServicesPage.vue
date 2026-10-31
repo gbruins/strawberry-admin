@@ -8,7 +8,7 @@ import SortableTableHead from '@/components/SortableTableHead.vue';
 import Overlay from '@/components/Overlay.vue';
 import DataPagination from '@/components/DataPagination.vue';
 import PopConfirm from '@/components/PopConfirm.vue';
-import { PencilIcon, Trash2Icon } from '@lucide/vue';
+import { PencilIcon, Trash2Icon, MailIcon } from '@lucide/vue';
 import Format8601 from '@/components/Format8601.vue';
 import ServiceUpsertModal from '@/components/services/ServiceUpsertModal.vue';
 import useApi from '@/composables/useApi';
@@ -30,7 +30,8 @@ function menuProblem(id: string | null) {
     return !menu ? t('Menu deleted') : (!menu.published ? t('Menu not published') : null);
 }
 const $apiDelete = useApi('service.delete');
-const { successToast } = useToast();
+const $apiNotify = useApi('notification.send');
+const { successToast, addToast } = useToast();
 const {
     onSort,
     getSortApiParams,
@@ -78,6 +79,26 @@ function onDeleteItem(id: string) {
 
             successToast({
                 title: t('Item deleted successfully')
+            });
+
+            fetchData();
+        }
+    );
+}
+
+function onNotify(id: string) {
+    return $apiNotify.tryCatch(
+        async () => {
+            const response = await $apiNotify.run(id);
+
+            if (response.data.recipientCount === 0) {
+                addToast({ title: t('No subscribers to notify yet') });
+                return;
+            }
+
+            successToast({
+                title: t('Notification sent'),
+                text: t('Sent to {count} subscriber(s)', { count: response.data.recipientCount })
             });
 
             fetchData();
@@ -149,7 +170,12 @@ onMounted(() => {
                     </TableCell>
 
                     <!-- notes -->
-                    <TableCell>{{ obj.notes }}</TableCell>
+                    <TableCell>
+                        {{ obj.notes }}
+                        <div v-if="obj.last_notified_at" class="text-sm text-muted-foreground" data-test="last-notified">
+                            {{ t('Notified') }} <Format8601 :date="obj.last_notified_at" />
+                        </div>
+                    </TableCell>
 
                     <!-- menu -->
                     <TableCell>
@@ -174,6 +200,18 @@ onMounted(() => {
                                 @click="upsertModal.show(obj.id)">
                                 <PencilIcon />
                             </Button>
+
+                            <PopConfirm @confirm="onNotify(obj.id)">
+                                <template v-slot:reference>
+                                    <!-- Disabled while a send is in flight (found by QA review:
+                                    unlike Delete, a duplicate notify isn't idempotent — it
+                                    really does double-email every subscriber). -->
+                                    <Button variant="ghost" size="icon" data-test="notify-subscribers" :disabled="$apiNotify.isLoading.value">
+                                        <MailIcon />
+                                    </Button>
+                                </template>
+                                {{ obj.last_notified_at ? t('Notify subscribers again about this opening?') : t('Notify subscribers about this opening?') }}
+                            </PopConfirm>
 
                             <PopConfirm @confirm="onDeleteItem(obj.id)">
                                 <template v-slot:reference>

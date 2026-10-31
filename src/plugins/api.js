@@ -9,6 +9,8 @@ import AddressDiscount from '@/api/address_discount';
 import Cart from '@/api/cart';
 import Service from '@/api/service';
 import ServiceMenu from '@/api/service_menu';
+import EmailSubscriber from '@/api/email_subscriber';
+import Notification from '@/api/notification';
 import useBroadcastChannels from '@/composables/useBroadcastChannels';
 import { supabase } from '@/plugins/supabase';
 
@@ -144,7 +146,9 @@ export default {
             product: Product(utils, axiosInstance),
             productType: ProductType(utils, axiosInstance),
             service: Service(utils, axiosInstance),
-            serviceMenu: ServiceMenu(utils, axiosInstance)
+            serviceMenu: ServiceMenu(utils, axiosInstance),
+            emailSubscriber: EmailSubscriber(utils, axiosInstance),
+            notification: Notification(utils, axiosInstance)
         });
 
         axiosInstance.interceptors.response.use(
