@@ -29,6 +29,12 @@ function menuProblem(id: string | null) {
     const menu = menus.value[id];
     return !menu ? t('Menu deleted') : (!menu.published ? t('Menu not published') : null);
 }
+
+// Hide the notify button once the window it'd be advertising has already ended, so staff
+// can't email subscribers about an opening that's no longer actually available.
+function serviceHasEnded(endAt: string) {
+    return new Date(endAt).getTime() < Date.now();
+}
 const $apiDelete = useApi('service.delete');
 const $apiNotify = useApi('notification.send');
 const { successToast, addToast } = useToast();
@@ -201,7 +207,7 @@ onMounted(() => {
                                 <PencilIcon />
                             </Button>
 
-                            <PopConfirm @confirm="onNotify(obj.id)">
+                            <PopConfirm v-if="!serviceHasEnded(obj.end_at)" @confirm="onNotify(obj.id)">
                                 <template v-slot:reference>
                                     <!-- Disabled while a send is in flight (found by QA review:
                                     unlike Delete, a duplicate notify isn't idempotent — it

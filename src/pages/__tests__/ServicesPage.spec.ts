@@ -50,6 +50,14 @@ function mountPage() {
     return mount(ServicesPage, { global: { plugins: [i18n], stubs } })
 }
 
+// Fixtures use times relative to the real clock (not fixed literals) so the notify button's
+// visibility — which depends on end_at vs. Date.now() — stays correct no matter when these
+// tests run.
+const futureStart = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+const futureEnd = new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString()
+const pastStart = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString()
+const pastEnd = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+
 describe('ServicesPage notify action', () => {
     beforeEach(() => {
         serviceSearch.mockReset()
@@ -63,7 +71,7 @@ describe('ServicesPage notify action', () => {
 
     it('shows the already-notified indicator when last_notified_at is set', async () => {
         serviceSearch.mockResolvedValue({ data: [
-            { id: 'svc1', start_at: '2026-01-01T19:00:00.000Z', end_at: '2026-01-02T02:00:00.000Z', notes: '', last_notified_at: '2026-01-01T12:00:00.000Z' }
+            { id: 'svc1', start_at: futureStart, end_at: futureEnd, notes: '', last_notified_at: pastStart }
         ], pagination: { total: 1 } })
 
         const wrapper = mountPage()
@@ -74,7 +82,7 @@ describe('ServicesPage notify action', () => {
 
     it('sends a notification and shows success for a real send', async () => {
         serviceSearch.mockResolvedValue({ data: [
-            { id: 'svc1', start_at: '2026-01-01T19:00:00.000Z', end_at: '2026-01-02T02:00:00.000Z', notes: '', last_notified_at: null }
+            { id: 'svc1', start_at: futureStart, end_at: futureEnd, notes: '', last_notified_at: null }
         ], pagination: { total: 1 } })
         notifySend.mockResolvedValue({ data: { sent: true, recipientCount: 5 } })
 
@@ -92,7 +100,7 @@ describe('ServicesPage notify action', () => {
 
     it('shows a distinct message when there are no subscribers, not a success toast', async () => {
         serviceSearch.mockResolvedValue({ data: [
-            { id: 'svc1', start_at: '2026-01-01T19:00:00.000Z', end_at: '2026-01-02T02:00:00.000Z', notes: '', last_notified_at: null }
+            { id: 'svc1', start_at: futureStart, end_at: futureEnd, notes: '', last_notified_at: null }
         ], pagination: { total: 1 } })
         notifySend.mockResolvedValue({ data: { sent: true, recipientCount: 0 } })
 
@@ -105,5 +113,17 @@ describe('ServicesPage notify action', () => {
 
         expect(addToast).toHaveBeenCalled()
         expect(successToast).not.toHaveBeenCalled()
+    })
+
+    it('hides the notify button once the service has ended', async () => {
+        serviceSearch.mockResolvedValue({ data: [
+            { id: 'past', start_at: pastStart, end_at: pastEnd, notes: '', last_notified_at: null },
+            { id: 'future', start_at: futureStart, end_at: futureEnd, notes: '', last_notified_at: null }
+        ], pagination: { total: 2 } })
+
+        const wrapper = mountPage()
+        await flushPromises()
+
+        expect(wrapper.findAll('[data-test="notify-subscribers"]')).toHaveLength(1)
     })
 })
