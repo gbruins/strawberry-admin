@@ -123,6 +123,7 @@ onMounted(() => {
         <Table>
             <TableHeader>
                 <TableRow>
+                    <TableHead>{{ t('Pickup code') }}</TableHead>
                     <SortableTableHead
                         sort-key="created_at"
                         :active-sort-key="activeSort.by"
@@ -140,11 +141,16 @@ onMounted(() => {
 
             <TableBody>
                 <TableRow v-for="(obj, idx) in tableResults" :key="idx">
-                    <!-- Created -->
+                    <!-- Pickup code -->
                     <TableCell>
                         <RouterLink :to="{ name: 'cart', params: { id: obj.id }}">
-                            <Format8601 :date="obj.created_at" />
+                            {{ obj.pickup_code ?? '—' }}
                         </RouterLink>
+                    </TableCell>
+
+                    <!-- Created -->
+                    <TableCell>
+                        <Format8601 :date="obj.created_at" />
                     </TableCell>
 
                     <!-- Status -->
@@ -211,7 +217,7 @@ onMounted(() => {
                 </TableRow>
 
                 <TableRow v-if="tableHasNoResults">
-                    <TableCell colspan="8" class="text-center text-muted-foreground">{{ t('No data') }}</TableCell>
+                    <TableCell colspan="9" class="text-center text-muted-foreground">{{ t('No data') }}</TableCell>
                 </TableRow>
             </TableBody>
         </Table>

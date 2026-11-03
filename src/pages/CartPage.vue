@@ -58,6 +58,12 @@ onMounted(() => {
                     <Label class="font-semibold">{{ t('Created') }}:</Label>
                     <Format8601 :date="cartData?.created_at" />
                 </div>
+
+                <!-- pickup code -->
+                <div class="grid gap-1.5">
+                    <Label class="font-semibold">{{ t('Pickup code') }}:</Label>
+                    <div>{{ cartData?.pickup_code ?? '—' }}</div>
+                </div>
             </div>
 
             <CartDetailItemsCard :cart="cartData" />

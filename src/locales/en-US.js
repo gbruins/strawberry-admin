@@ -185,6 +185,7 @@ export default {
 
     // Kitchen Display System
     'Kitchen Login': 'Kitchen Login',
+    'Pickup code': 'Pickup code',
     'Station code': 'Station code',
     'Log in': 'Log in',
     'Invalid station code or PIN': 'Invalid station code or PIN',
