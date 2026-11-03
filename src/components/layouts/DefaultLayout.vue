@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
@@ -13,7 +13,9 @@ import {
     BadgePercentIcon,
     MailIcon,
     LogOutIcon,
-    ChevronsUpDownIcon
+    ChevronsUpDownIcon,
+    StoreIcon,
+    ChefHatIcon
 } from '@lucide/vue';
 import {
     SidebarProvider,
@@ -55,7 +57,9 @@ const navItems = [
     { name: 'product_types', label: 'Product types', icon: TagIcon },
     { name: 'allowed_streets', label: 'Allowed streets', icon: MapPinIcon },
     { name: 'address_discounts', label: 'Address discounts', icon: BadgePercentIcon },
-    { name: 'subscribers', label: 'Subscribers', icon: MailIcon }
+    { name: 'subscribers', label: 'Subscribers', icon: MailIcon },
+    { name: 'kitchen_stations', label: 'Kitchen stations', icon: ChefHatIcon },
+    { name: 'tenant_address', label: 'Store address', icon: StoreIcon }
 ];
 
 function onLogout() {
@@ -75,14 +79,25 @@ async function logout() {
     }
 }
 
+// Closed on unmount — an open BroadcastChannel keeps its onmessage handler alive even after
+// this component unmounts, so without this a transient mount (e.g. the brief pre-navigation
+// paint before the router's initial route resolves) would leave a listener that fires forever
+// for the rest of the tab's life, including on routes that never mount this layout again.
+let logoutChannel = null;
+
 onMounted(() => {
-    const logoutChannel = getLogoutChannel();
+    logoutChannel = getLogoutChannel();
 
     logoutChannel.onmessage = (event) => {
         if (event.data?.type === 'logout') {
             onLogout();
         }
     };
+});
+
+onUnmounted(() => {
+    logoutChannel?.close();
+    logoutChannel = null;
 });
 </script>
 
@@ -154,3 +169,10 @@ onMounted(() => {
         </SidebarInset>
     </SidebarProvider>
 </template>
+
+<style>
+.group\/menu-item a {
+    text-decoration: none;
+    color: var(--color-gray-600)
+}
+</style>

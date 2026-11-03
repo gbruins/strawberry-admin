@@ -11,8 +11,13 @@ import Service from '@/api/service';
 import ServiceMenu from '@/api/service_menu';
 import EmailSubscriber from '@/api/email_subscriber';
 import Notification from '@/api/notification';
+import Kitchen from '@/api/kitchen';
+import KitchenStation from '@/api/kitchen_station';
+import Tenant from '@/api/tenant';
 import useBroadcastChannels from '@/composables/useBroadcastChannels';
 import { supabase } from '@/plugins/supabase';
+import { useKitchenStationStore } from '@/stores/kitchenStation';
+import router from '@/router';
 
 export let axiosInstance = null;
 
@@ -29,8 +34,19 @@ export default {
             },
         });
 
-        // Supabase Auth bearer token instead of the old cookie session (contracts/admin-auth.md).
+        // Supabase Auth bearer token for the owner session (contracts/admin-auth.md) — OR a
+        // kitchen station's own opaque session token, a completely separate, non-Supabase auth
+        // domain (strawberry-admin/CLAUDE.md). The kitchen token takes priority whenever one
+        // exists: a kitchen tablet is a dedicated kiosk that never also carries an owner login,
+        // so this is a deterministic rule, not "whichever token happens to exist."
         axiosInstance.interceptors.request.use(async (config) => {
+            const kitchenStore = useKitchenStationStore();
+
+            if (kitchenStore.stationSessionToken) {
+                config.headers.Authorization = `Bearer ${kitchenStore.stationSessionToken}`;
+                return config;
+            }
+
             const { data } = await supabase.auth.getSession();
 
             if (data?.session?.access_token) {
@@ -148,7 +164,10 @@ export default {
             service: Service(utils, axiosInstance),
             serviceMenu: ServiceMenu(utils, axiosInstance),
             emailSubscriber: EmailSubscriber(utils, axiosInstance),
-            notification: Notification(utils, axiosInstance)
+            notification: Notification(utils, axiosInstance),
+            kitchen: Kitchen(utils, axiosInstance),
+            kitchenStation: KitchenStation(utils, axiosInstance),
+            tenant: Tenant(utils, axiosInstance)
         });
 
         axiosInstance.interceptors.response.use(
@@ -158,7 +177,18 @@ export default {
                     const errorCode = parseInt(error?.response?.status, 10);
 
                     switch (errorCode) {
-                        case 401:
+                        case 401: {
+                            const kitchenStore = useKitchenStationStore();
+
+                            // A station session expiring/being revoked is handled entirely
+                            // separately from the owner's Supabase logout below — it must never
+                            // touch supabase.auth or the owner's cross-tab logout broadcast.
+                            if (kitchenStore.stationSessionToken) {
+                                kitchenStore.clearSession();
+                                router.push({ name: 'kitchen_login' });
+                                break;
+                            }
+
                             console.error('Unauthorized');
                             // Sign out of Supabase here directly, but this code does NOT also
                             // call appStore.clearSession() — that happens indirectly, via the
@@ -178,6 +208,7 @@ export default {
                             supabase.auth.signOut();
                             postToChannel({ type: 'logout' }, getLogoutChannel());
                             break;
+                        }
                     }
                 }
 

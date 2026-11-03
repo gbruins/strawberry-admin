@@ -43,7 +43,10 @@ const stubs = {
     Format8601: { template: '<span></span>' },
     Button: { template: '<button><slot /></button>' },
     ServiceUpsertModal: { template: '<div></div>' },
-    PopConfirm: { template: '<div><slot name="reference" /><button class="confirm-btn" @click="$emit(\'confirm\')"></button></div>', emits: ['confirm'] }
+    PopConfirm: { template: '<div><slot name="reference" /><button class="confirm-btn" @click="$emit(\'confirm\')"></button></div>', emits: ['confirm'] },
+    // The real component reaches into useAppStore() (Pinia) for the admin's tenant timezone —
+    // irrelevant to these tests and not worth wiring up a Pinia instance just to mount it.
+    DateTimePicker: { template: '<input />' }
 }
 
 function mountPage() {
@@ -125,5 +128,41 @@ describe('ServicesPage notify action', () => {
         await flushPromises()
 
         expect(wrapper.findAll('[data-test="notify-subscribers"]')).toHaveLength(1)
+    })
+
+    it('defaults the ends-after filter to now, sending it as an end_at gte param', async () => {
+        serviceSearch.mockResolvedValue({ data: [], pagination: { total: 0 } })
+
+        const before = Date.now()
+        mountPage()
+        await flushPromises()
+
+        expect(serviceSearch).toHaveBeenCalled()
+        const params = serviceSearch.mock.calls[0]![0]
+        expect(params.end_at).toBeTruthy()
+
+        const sent = JSON.parse(params.end_at)
+        expect(sent.gte).toBeTruthy()
+        expect(new Date(sent.gte).getTime()).toBeGreaterThanOrEqual(before)
+        expect(new Date(sent.gte).getTime()).toBeLessThanOrEqual(Date.now())
+    })
+
+    it('tags only the soonest not-yet-ended service as Next', async () => {
+        serviceSearch.mockResolvedValue({ data: [
+            { id: 'later', start_at: futureEnd, end_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), notes: '', last_notified_at: null },
+            { id: 'soonest', start_at: futureStart, end_at: futureEnd, notes: '', last_notified_at: null },
+            { id: 'already-ended', start_at: pastStart, end_at: pastEnd, notes: '', last_notified_at: null }
+        ], pagination: { total: 3 } })
+
+        const wrapper = mountPage()
+        await flushPromises()
+
+        const badges = wrapper.findAll('[data-test="next-upcoming"]')
+        expect(badges).toHaveLength(1)
+
+        // Row order follows the array passed to serviceSearch above — 'soonest' is index 1.
+        const rows = wrapper.findAll('tbody tr')
+        const taggedRow = badges[0]!.element.closest('tr')
+        expect(taggedRow).toBe(rows[1]!.element)
     })
 })

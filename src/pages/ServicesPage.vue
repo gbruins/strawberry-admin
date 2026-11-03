@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
+import SearchFilterLayout from '@/components/layouts/SearchFilterLayout.vue';
+import FilterGrid from '@/components/layouts/FilterGrid.vue';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import SortableTableHead from '@/components/SortableTableHead.vue';
-import Overlay from '@/components/Overlay.vue';
 import DataPagination from '@/components/DataPagination.vue';
 import PopConfirm from '@/components/PopConfirm.vue';
+import DateTimePicker from '@/components/DateTimePicker.vue';
 import { PencilIcon, Trash2Icon, MailIcon } from '@lucide/vue';
 import Format8601 from '@/components/Format8601.vue';
 import ServiceUpsertModal from '@/components/services/ServiceUpsertModal.vue';
@@ -54,6 +58,25 @@ const pageNumber = ref(1);
 const defaultSort = { by: 'start_at', isDesc: true };
 const activeSort = ref({ ...defaultSort });
 
+// Defaults to "now" so past services aren't retrieved on first load — staff manage upcoming
+// openings here, not a historical log. Cleared (set to null) to see everything, including past.
+const filters = reactive({
+    endsAfter: new Date().toISOString()
+});
+
+// The soonest service that hasn't ended yet, among the currently loaded rows — same
+// "current or next" definition the public /services/next endpoint uses (ServiceState.js):
+// end_at in the future, ordered by start_at ascending, first one wins.
+const nextUpcomingId = computed(() => {
+    const now = Date.now();
+
+    const upcoming = tableResults.value
+        .filter((s) => s.start_at && s.end_at && new Date(s.end_at).getTime() > now)
+        .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+
+    return upcoming[0]?.id ?? null;
+});
+
 function fetchMenus() {
     return $apiMenus.tryCatch(
         async () => {
@@ -66,11 +89,17 @@ function fetchMenus() {
 function fetchData() {
     return $apiSearch.tryCatch(
         async () => {
-            const response = await $apiSearch.run({
+            const params: Record<string, any> = {
                 ...getSortApiParams(),
                 _page: pageNumber.value,
                 _pageSize: pageSize.value
-            });
+            };
+
+            if (filters.endsAfter) {
+                params.end_at = JSON.stringify({ gte: filters.endsAfter });
+            }
+
+            const response = await $apiSearch.run(params);
 
             setTableResults(response.data);
             setTableTotalResultsCount(response.pagination.total);
@@ -136,7 +165,24 @@ onMounted(() => {
         </Button>
     </div>
 
-    <Overlay :show="$apiSearch.isLoading.value">
+    <SearchFilterLayout :loading="$apiSearch.isLoading.value">
+        <template #filters>
+            <FilterGrid>
+                <!-- ends after -->
+                <div class="grid gap-1.5">
+                    <Label>{{ t('Ends after') }}</Label>
+
+                    <DateTimePicker v-model="filters.endsAfter" />
+                </div>
+            </FilterGrid>
+
+            <div class="mt-5">
+                <Button @click="fetchData">
+                    {{ t('Apply filters') }}
+                </Button>
+            </div>
+        </template>
+
         <Table>
             <TableHeader>
                 <TableRow>
@@ -167,7 +213,10 @@ onMounted(() => {
                 <TableRow v-for="(obj, idx) in tableResults" :key="idx">
                     <!-- start_at -->
                     <TableCell>
-                        <Format8601 :date="obj.start_at" />
+                        <div class="flex items-center gap-2">
+                            <Format8601 :date="obj.start_at" />
+                            <Badge v-if="obj.id === nextUpcomingId" variant="success" data-test="next-upcoming">{{ t('Next') }}</Badge>
+                        </div>
                     </TableCell>
 
                     <!-- end_at -->
@@ -241,7 +290,7 @@ onMounted(() => {
             v-model:page-size="pageSize"
             v-model:page-number="pageNumber"
             :total-rows="tableTotalResultsCount" />
-    </Overlay>
+    </SearchFilterLayout>
 
     <ServiceUpsertModal
         ref="upsertModal"

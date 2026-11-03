@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAppStore } from '@/stores/app';
+import { useKitchenStationStore } from '@/stores/kitchenStation';
 import BlankLayout from '@/components/layouts/BlankLayout.vue';
+import KitchenLayout from '@/components/layouts/KitchenLayout.vue';
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -92,12 +94,59 @@ const router = createRouter({
             name: 'services',
             component: () => import('@/pages/ServicesPage.vue'),
         },
+
+        {
+            path: '/settings/store-address',
+            name: 'tenant_address',
+            component: () => import('@/pages/TenantAddressPage.vue'),
+        },
+
+        {
+            path: '/settings/kitchen-stations',
+            name: 'kitchen_stations',
+            component: () => import('@/pages/KitchenStationsPage.vue'),
+        },
+
+        // Kitchen Display System — a completely separate, non-Supabase auth domain (shared
+        // station PIN login), always using KitchenLayout (full-screen, no sidebar) instead of
+        // DefaultLayout. See the early branch in beforeEach below.
+        {
+            path: '/kitchen/login',
+            name: 'kitchen_login',
+            meta: { layout: KitchenLayout },
+            component: () => import('@/pages/KitchenLoginPage.vue'),
+        },
+
+        {
+            path: '/kitchen/board',
+            name: 'kitchen_board',
+            meta: { layout: KitchenLayout },
+            component: () => import('@/pages/KitchenBoardPage.vue'),
+        },
     ]
 })
 
 
 // Global navigation guard for authentication
 router.beforeEach(async (to, from, next) => {
+    // Kitchen station auth is a completely separate domain from the owner's Supabase session
+    // below (strawberry-admin/CLAUDE.md) — it must never fall through to appStore/Supabase
+    // logic, and a missing/expired station session must redirect to kitchen_login, never the
+    // owner's /login.
+    if (to.path.startsWith('/kitchen')) {
+        if (to.name === 'kitchen_login') {
+            return next();
+        }
+
+        const kitchenStore = useKitchenStationStore();
+
+        if (!kitchenStore.stationSessionToken) {
+            return next({ name: 'kitchen_login' });
+        }
+
+        return next();
+    }
+
     const appStore = useAppStore();
 
     // List of routes that don't require auth
