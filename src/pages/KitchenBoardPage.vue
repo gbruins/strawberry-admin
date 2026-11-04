@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ArrowLeftIcon, ArrowRightIcon } from '@lucide/vue';
+import { ArrowLeftIcon, ArrowRightIcon, Volume2Icon, VolumeXIcon, EyeIcon, EyeOffIcon } from '@lucide/vue';
+import { tiks } from '@rexa-developer/tiks';
 import { useKitchenStationStore } from '@/stores/kitchenStation';
 import { getKitchenRealtimeClient } from '@/plugins/kitchenRealtime';
 import useApi from '@/composables/useApi';
@@ -15,10 +16,19 @@ import { Button } from '@/components/ui/button';
 const POLL_INTERVAL_MS = 5000;
 // realtime_jwt is signed for ~1h (realtimeToken.js) — refreshed well before expiry.
 const REALTIME_TOKEN_REFRESH_MS = 45 * 60 * 1000;
+// Resolution for the wait-time badges — minutes-granularity display, no need for anything tighter.
+const NOW_TICK_MS = 30000;
+// How long a ticket sits in its current stage before the wait badge escalates to the urgent
+// style. Only applies to queued/in_progress — see isUrgent().
+const WAIT_WARNING_MS = 10 * 60 * 1000;
+// How long the just-arrived flash ring stays on a new ticket's card.
+const FLASH_DURATION_MS = 5000;
+const SOUND_ENABLED_STORAGE_KEY = 'kitchen_board_sound_enabled';
+const SHOW_COMPLETED_STORAGE_KEY = 'kitchen_board_show_completed';
 
 const KITCHEN_STATUS_ORDER = ['queued', 'in_progress', 'completed'];
 
-const COLUMNS = [
+const ALL_COLUMNS = [
     { status: 'queued', label: 'Queued' },
     { status: 'in_progress', label: 'In Progress' },
     { status: 'completed', label: 'Completed' }
@@ -46,11 +56,32 @@ const connectionState = ref('connecting');
 // rather than the small anchored PopConfirm used elsewhere in the admin app: a kiosk tablet
 // getting bumped by busy hands needs a bigger, more separated "are you sure" than a desk UI does.
 const confirmTicket = ref(null);
+// Ticked every NOW_TICK_MS so the wait-time badges stay current without needing new server
+// data — formatWaitTime()/isUrgent() read this instead of calling Date.now() directly so
+// they're reactive to the tick.
+const now = ref(Date.now());
+// Ticket ids currently showing the just-arrived flash ring. A reactive Set — Vue 3 tracks
+// add()/delete()/has() on a ref-wrapped Set, so the template reacts without extra plumbing.
+const flashingIds = ref(new Set());
+const soundEnabled = ref(readSoundEnabled());
+// Hidden by default — most of the time a completed ticket is no longer actionable, and a
+// 2-column layout gives the two stages that still need attention more room. Completed tickets
+// are always fetched regardless (ticketsByStatus.completed is unaffected) — this only hides
+// the column.
+const showCompleted = ref(readShowCompleted());
 
 let pollTimer = null;
 let refreshTimer = null;
+let nowTimer = null;
 let channel = null;
 let isUnmounting = false;
+// Pure bookkeeping for the new-ticket alert, never read by the template — a plain Set, not
+// reactive. Only ever grows; "new" means "not in here yet when a fetch resolves."
+let seenTicketIds = new Set();
+// The very first fetchTickets() call (onMounted, before startRealtime()) seeds seenTicketIds
+// from whatever's already on the board — a tablet reloading mid-shift must not re-alert on
+// every ticket already visible. Only fetches after that one can trigger an alert.
+let hasLoadedOnce = false;
 
 const ticketsByStatus = computed(() => {
     const grouped = { queued: [], in_progress: [], completed: [] };
@@ -64,10 +95,121 @@ const ticketsByStatus = computed(() => {
     return grouped;
 });
 
+const visibleColumns = computed(() => {
+    return showCompleted.value ? ALL_COLUMNS : ALL_COLUMNS.filter((column) => column.status !== 'completed');
+});
+
+function formatWaitTime(iso) {
+    if (!iso) {
+        return '';
+    }
+
+    const mins = Math.floor(Math.max(0, now.value - new Date(iso).getTime()) / 60000);
+
+    if (mins < 1) {
+        return '<1m';
+    }
+
+    if (mins < 60) {
+        return `${mins}m`;
+    }
+
+    return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+}
+
+// Completed is terminal — every finished ticket would eventually cross any wait threshold and
+// sit flagged urgent forever for no reason, so it never escalates (see WAIT_WARNING_MS).
+function isUrgent(ticket) {
+    if (ticket.kitchen_status === 'completed' || !ticket.kitchen_status_updated_at) {
+        return false;
+    }
+
+    return now.value - new Date(ticket.kitchen_status_updated_at).getTime() >= WAIT_WARNING_MS;
+}
+
+function readSoundEnabled() {
+    try {
+        return localStorage.getItem(SOUND_ENABLED_STORAGE_KEY) !== 'false';
+    }
+    catch (error) {
+        return true;
+    }
+}
+
+// tiks owns the actual mute state (tiks.mute()/unmute(), shared globally per its own docs) —
+// soundEnabled here just mirrors it for the icon and for localStorage persistence across a
+// reload, since tiks itself doesn't persist anything.
+function toggleSound() {
+    soundEnabled.value = !soundEnabled.value;
+
+    if (soundEnabled.value) {
+        tiks.unmute();
+    }
+    else {
+        tiks.mute();
+    }
+
+    try {
+        localStorage.setItem(SOUND_ENABLED_STORAGE_KEY, String(soundEnabled.value));
+    }
+    catch (error) {
+        // Private browsing / blocked storage — the toggle still works for this page load,
+        // it just won't be remembered next time.
+    }
+}
+
+function readShowCompleted() {
+    try {
+        return localStorage.getItem(SHOW_COMPLETED_STORAGE_KEY) === 'true';
+    }
+    catch (error) {
+        return false;
+    }
+}
+
+function toggleShowCompleted() {
+    showCompleted.value = !showCompleted.value;
+
+    try {
+        localStorage.setItem(SHOW_COMPLETED_STORAGE_KEY, String(showCompleted.value));
+    }
+    catch (error) {
+        // Private browsing / blocked storage — the toggle still works for this page load,
+        // it just won't be remembered next time.
+    }
+}
+
+function onNewTickets(newlyQueuedTickets) {
+    tiks.notify();
+
+    newlyQueuedTickets.forEach((ticket) => {
+        flashingIds.value.add(ticket.id);
+
+        setTimeout(() => {
+            flashingIds.value.delete(ticket.id);
+        }, FLASH_DURATION_MS);
+    });
+}
+
 async function fetchTickets() {
     return $apiTickets.tryCatch(async () => {
         const response = await $apiTickets.run();
-        tickets.value = response.data || [];
+        const freshTickets = response.data || [];
+
+        if (hasLoadedOnce) {
+            const newlyQueuedTickets = freshTickets.filter(
+                (ticket) => ticket.kitchen_status === 'queued' && !seenTicketIds.has(ticket.id)
+            );
+
+            if (newlyQueuedTickets.length) {
+                onNewTickets(newlyQueuedTickets);
+            }
+        }
+
+        freshTickets.forEach((ticket) => seenTicketIds.add(ticket.id));
+        hasLoadedOnce = true;
+
+        tickets.value = freshTickets;
     });
 }
 
@@ -211,6 +353,10 @@ async function refreshRealtimeToken() {
 }
 
 onMounted(async () => {
+    // Safe to call anytime per tiks' own docs — the AudioContext itself is created lazily on
+    // the first real user gesture, so this never trips the browser's autoplay-policy warning.
+    tiks.init({ muted: !soundEnabled.value });
+
     await fetchTickets();
     // realtimeJwt is intentionally in-memory only (never persisted), so it's always gone after
     // a reload even though stationSessionToken survives one — startRealtime() alone would just
@@ -220,6 +366,9 @@ onMounted(async () => {
     startRealtime();
     await refreshRealtimeToken();
     refreshTimer = setInterval(refreshRealtimeToken, REALTIME_TOKEN_REFRESH_MS);
+    nowTimer = setInterval(() => {
+        now.value = Date.now();
+    }, NOW_TICK_MS);
 });
 
 onBeforeUnmount(() => {
@@ -230,6 +379,10 @@ onBeforeUnmount(() => {
         clearInterval(refreshTimer);
     }
 
+    if (nowTimer) {
+        clearInterval(nowTimer);
+    }
+
     if (channel) {
         getKitchenRealtimeClient().removeChannel(channel);
     }
@@ -238,15 +391,37 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="flex flex-col h-full gap-4">
-        <div v-if="connectionState === 'disconnected'" class="rounded-lg bg-destructive/10 text-destructive px-4 py-2 text-sm text-center shrink-0">
-            {{ t('Connection lost — reconnecting…') }}
-        </div>
-        <div v-else-if="connectionState === 'polling'" class="rounded-lg bg-muted px-4 py-2 text-sm text-center text-muted-foreground shrink-0">
-            {{ t('Live updates unavailable — refreshing automatically') }}
+        <div class="flex items-center justify-between gap-2 shrink-0">
+            <div class="flex-1">
+                <div v-if="connectionState === 'disconnected'" class="rounded-lg bg-destructive/10 text-destructive px-4 py-2 text-sm text-center">
+                    {{ t('Connection lost — reconnecting…') }}
+                </div>
+                <div v-else-if="connectionState === 'polling'" class="rounded-lg bg-muted px-4 py-2 text-sm text-center text-muted-foreground">
+                    {{ t('Live updates unavailable — refreshing automatically') }}
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="h-10 shrink-0 px-3 rounded-lg bg-muted flex items-center gap-2 text-sm font-medium active:bg-muted-foreground/20"
+                @click="toggleShowCompleted">
+                <EyeIcon v-if="!showCompleted" class="size-5" />
+                <EyeOffIcon v-else class="size-5" />
+                {{ showCompleted ? t('Hide completed') : t('Show completed') }}
+            </button>
+
+            <button
+                type="button"
+                :aria-label="soundEnabled ? t('Mute new ticket alerts') : t('Unmute new ticket alerts')"
+                class="h-10 w-10 shrink-0 rounded-lg bg-muted flex items-center justify-center active:bg-muted-foreground/20"
+                @click="toggleSound">
+                <Volume2Icon v-if="soundEnabled" class="size-5" />
+                <VolumeXIcon v-else class="size-5" />
+            </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-            <div v-for="column in COLUMNS" :key="column.status" class="flex flex-col h-full min-h-0">
+        <div class="grid grid-cols-1 gap-4 flex-1 min-h-0" :class="showCompleted ? 'md:grid-cols-3' : 'md:grid-cols-2'">
+            <div v-for="column in visibleColumns" :key="column.status" class="flex flex-col h-full min-h-0">
                 <div class="text-lg font-semibold mb-2 px-1">
                     {{ t(column.label) }} ({{ ticketsByStatus[column.status].length }})
                 </div>
@@ -255,9 +430,17 @@ onBeforeUnmount(() => {
                     <div
                         v-for="ticket in ticketsByStatus[column.status]"
                         :key="ticket.id"
-                        class="rounded-xl border p-4 shadow-sm"
-                        :class="COLUMN_CARD_CLASS[column.status]">
-                        <div class="text-2xl font-bold">#{{ ticket.pickup_code }}</div>
+                        class="rounded-xl border p-4 shadow-sm transition-shadow"
+                        :class="[COLUMN_CARD_CLASS[column.status], flashingIds.has(ticket.id) ? 'ring-4 ring-primary animate-pulse' : '']">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="text-2xl font-bold">#{{ ticket.pickup_code }}</div>
+
+                            <div
+                                class="text-xs font-semibold px-2 py-1 rounded-full shrink-0"
+                                :class="isUrgent(ticket) ? 'bg-destructive text-white' : 'bg-background/70 text-muted-foreground'">
+                                {{ formatWaitTime(ticket.kitchen_status_updated_at) }}
+                            </div>
+                        </div>
 
                         <ul class="mt-2 space-y-1 text-base">
                             <li v-for="(item, idx) in ticket.items" :key="idx">{{ item.quantity }}× {{ item.name }}</li>
