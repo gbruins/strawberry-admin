@@ -9,17 +9,16 @@ import { ref, reactive, computed, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, maxLength } from '@vuelidate/validators';
-import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
-import FigFormTextarea from '@/components/figleaf/form/textarea/FormTextarea.vue';
-import FigFormCheckbox from '@/components/figleaf/form/checkbox/FormCheckbox.vue';
-import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
-import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigModal from '@/components/figleaf/modal/Modal.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import Overlay from '@/components/Overlay.vue';
+import Format8601 from '@/components/Format8601.vue';
 import useApi from '@/composables/useApi';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const emit = defineEmits(['success']);
 
@@ -30,7 +29,7 @@ const $apiRead = useApi('serviceMenu.read');
 const $apiSearch = useApi('serviceMenu.search');
 const { successToast } = useToast();
 
-const upsertModal = ref(null);
+const open = ref(false);
 const updateId: Ref<string | null> = ref(null);
 const wasPublished = ref(false);
 const productCount = ref(0);
@@ -108,7 +107,7 @@ function onSubmit() {
 }
 
 function hide() {
-    upsertModal.value.hide();
+    open.value = false;
 }
 
 function resetData() {
@@ -130,72 +129,65 @@ function show(id?: string) {
         getById(id);
     }
 
-    upsertModal.value.show();
+    open.value = true;
 }
 
 defineExpose({ show });
 </script>
 
 <template>
-    <fig-modal size="lg" ref="upsertModal">
-        <template v-slot:header>
-            {{ updateId ? $t('Update menu') : $t('Create menu') }}
-        </template>
+    <Dialog v-model:open="open">
+        <DialogContent class="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>{{ updateId ? t('Update menu') : t('Create menu') }}</DialogTitle>
+                <DialogDescription class="sr-only">{{ updateId ? t('Update menu') : t('Create menu') }}</DialogDescription>
+            </DialogHeader>
 
-        <fig-overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
-            <fig-label-value-group display="block" density="md">
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Title') }}</template>
-                    <fig-form-input-text v-model="form.title" />
+            <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="grid gap-1.5">
+                        <Label for="menu-title">{{ t('Title') }}</Label>
+                        <Input id="menu-title" v-model="form.title" />
 
-                    <template v-slot:error>
-                        <div v-if="v$.title.required.$invalid">{{ $t('required') }}</div>
-                        <div v-else-if="v$.title.maxLength.$invalid">{{ $t('must be at most {max} characters', { max: 255 }) }}</div>
-                    </template>
-                </fig-label-value>
+                        <div v-if="v$.title.$dirty && v$.title.required.$invalid" class="text-sm text-destructive">{{ t('required') }}</div>
+                        <div v-else-if="v$.title.$dirty && v$.title.maxLength.$invalid" class="text-sm text-destructive">{{ t('must be at most {max} characters', { max: 255 }) }}</div>
+                    </div>
 
-                <div v-if="duplicateTitle" class="text-sm text-amber-700" data-test="duplicate-title">
-                    {{ $t('Another menu already has this title. You can still save.') }}
+                    <div v-if="duplicateTitle" class="text-sm text-amber-700" data-test="duplicate-title">
+                        {{ t('Another menu already has this title. You can still save.') }}
+                    </div>
+
+                    <div class="grid gap-1.5">
+                        <Label for="menu-description">{{ t('Description') }}</Label>
+                        <Textarea id="menu-description" v-model="form.description" />
+
+                        <div v-if="v$.description.$dirty && v$.description.maxLength.$invalid" class="text-sm text-destructive">{{ t('must be at most {max} characters', { max: 2000 }) }}</div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <Checkbox id="menu-published" v-model="form.published" />
+                        <Label for="menu-published">{{ t('Published') }}</Label>
+                    </div>
+
+                    <div v-if="emptyPublishWarning" class="text-sm text-amber-700" data-test="empty-warning">
+                        {{ t('This menu has no products. Visitors will see an empty menu. You can still save.') }}
+                    </div>
+
+                    <div v-if="unpublishWarning" class="text-sm text-amber-700" data-test="unpublish-warning">
+                        {{ t('Unpublishing hides this menu from visitors. These services use it:') }}
+                        <ul class="list-disc ml-5">
+                            <li v-for="svc in services" :key="svc.id">
+                                <Format8601 :date="svc.start_at" />
+                            </li>
+                        </ul>
+                    </div>
                 </div>
+            </Overlay>
 
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Description') }}</template>
-                    <fig-form-textarea v-model="form.description" />
-
-                    <template v-slot:error>
-                        <div v-if="v$.description.maxLength.$invalid">{{ $t('must be at most {max} characters', { max: 2000 }) }}</div>
-                    </template>
-                </fig-label-value>
-
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Published') }}</template>
-                    <fig-form-checkbox v-model="form.published" binary />
-                </fig-label-value>
-
-                <div v-if="emptyPublishWarning" class="text-sm text-amber-700" data-test="empty-warning">
-                    {{ $t('This menu has no products. Visitors will see an empty menu. You can still save.') }}
-                </div>
-
-                <div v-if="unpublishWarning" class="text-sm text-amber-700" data-test="unpublish-warning">
-                    {{ $t('Unpublishing hides this menu from visitors. These services use it:') }}
-                    <ul class="list-disc ml-5">
-                        <li v-for="svc in services" :key="svc.id">
-                            <fig-format8601 :date="svc.start_at" />
-                        </li>
-                    </ul>
-                </div>
-            </fig-label-value-group>
-        </fig-overlay>
-
-        <template v-slot:footer>
-            <div class="flex items-center gap-4 w-full justify-center">
-                <fig-button
-                    variant="primary"
-                    @click="onSubmit"
-                    :disabled="v$.$invalid">{{ $t('Submit') }}</fig-button>
-
-                <fig-button variant="plain" @click="hide">{{ $t('Cancel') }}</fig-button>
-            </div>
-        </template>
-    </fig-modal>
+            <DialogFooter class="sm:justify-center">
+                <Button :disabled="v$.$invalid" @click="onSubmit">{{ t('Submit') }}</Button>
+                <Button variant="ghost" @click="hide">{{ t('Cancel') }}</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>

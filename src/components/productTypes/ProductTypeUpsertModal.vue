@@ -9,17 +9,14 @@ import { ref, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/app.js';
 import slugify from 'slugify';
-import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
-import FigFormInputNumber from '@/components/figleaf/form/number/FormInputNumber.vue';
-import FigFormCheckbox from '@/components/figleaf/form/checkbox/FormCheckbox.vue';
-import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
-import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigModal from '@/components/figleaf/modal/Modal.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import AllowedStreetsSelect from '@/components/allowedStreets/AllowedStreetsSelect.vue';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import Overlay from '@/components/Overlay.vue';
 import useApi from '@/composables/useApi';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const emit = defineEmits([
     'success'
@@ -32,7 +29,7 @@ const $apiRead = useApi('productType.read');
 const { successToast } = useToast();
 const appStore = useAppStore();
 
-const upsertModal = ref(null);
+const open = ref(false);
 const updateId = ref(null);
 
 const form = reactive({
@@ -80,7 +77,7 @@ function onSubmit() {
 }
 
 function hide() {
-    upsertModal.value.hide();
+    open.value = false;
 }
 
 function resetData() {
@@ -99,7 +96,7 @@ function show(id) {
         getById(id);
     }
 
-    upsertModal.value.show();
+    open.value = true;
 }
 
 defineExpose({
@@ -108,49 +105,39 @@ defineExpose({
 </script>
 
 <template>
-    <fig-modal
-        size="lg"
-        ref="upsertModal">
-        <template v-slot:header>
-            {{ updateId ? $t('Update product type') : $t('Create product type') }}
-        </template>
+    <Dialog v-model:open="open">
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{{ updateId ? t('Update product type') : t('Create product type') }}</DialogTitle>
+                <DialogDescription class="sr-only">{{ updateId ? t('Update product type') : t('Create product type') }}</DialogDescription>
+            </DialogHeader>
 
-        <fig-overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
-            <fig-label-value-group display="block" density="md">
-                <!-- name -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Name') }}</template>
-                    <fig-form-input-text
-                        v-model="form.name" />
-                </fig-label-value>
+            <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- name -->
+                    <div class="grid gap-1.5">
+                        <Label for="product-type-name">{{ t('Name') }}</Label>
+                        <Input id="product-type-name" v-model="form.name" />
+                    </div>
 
-                <!-- description -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Description') }}</template>
-                    <fig-form-input-text
-                        v-model="form.description" />
-                </fig-label-value>
+                    <!-- description -->
+                    <div class="grid gap-1.5">
+                        <Label for="product-type-description">{{ t('Description') }}</Label>
+                        <Input id="product-type-description" v-model="form.description" />
+                    </div>
 
-                <!-- published -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Published') }}</template>
-                    <fig-form-checkbox
-                        v-model="form.published"
-                        binary />
-                </fig-label-value>
-            </fig-label-value-group>
-        </fig-overlay>
+                    <!-- published -->
+                    <div class="flex items-center gap-2">
+                        <Checkbox id="product-type-published" v-model="form.published" />
+                        <Label for="product-type-published">{{ t('Published') }}</Label>
+                    </div>
+                </div>
+            </Overlay>
 
-        <template v-slot:footer>
-            <div class="flex items-center gap-4 w-full justify-center">
-                <fig-button
-                    variant="primary"
-                    @click="onSubmit">{{ $t('Submit') }}</fig-button>
-
-                <fig-button
-                    variant="plain"
-                    @click="hide">{{ $t('Cancel') }}</fig-button>
-            </div>
-        </template>
-    </fig-modal>
+            <DialogFooter class="sm:justify-center">
+                <Button @click="onSubmit">{{ t('Submit') }}</Button>
+                <Button variant="ghost" @click="hide">{{ t('Cancel') }}</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>

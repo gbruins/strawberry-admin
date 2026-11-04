@@ -1,29 +1,25 @@
 <script setup lang="ts">
-import  { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/app.js';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
-import FigTh from '@/components/figleaf/tableSimple/Th.vue';
-import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
-import FigTd from '@/components/figleaf/tableSimple/Td.vue';
-import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigBooleanTag from '@/components/figleaf/booleanTag/BooleanTag.vue';
-import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import SortableTableHead from '@/components/SortableTableHead.vue';
+import Overlay from '@/components/Overlay.vue';
+import DataPagination from '@/components/DataPagination.vue';
+import PopConfirm from '@/components/PopConfirm.vue';
+import BooleanBadge from '@/components/BooleanBadge.vue';
+import { PencilIcon, Trash2Icon } from '@lucide/vue';
 import ProductTypeUpsertModal from '@/components/productTypes/ProductTypeUpsertModal.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
-import usePagination from '@/components/figleaf/pagination/usePagination.js';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const $apiSearch = useApi('productType.search');
 const $apiDelete = useApi('productType.delete');
 const { t } = useI18n();
 const { successToast } = useToast();
-const { setData, getPaginationApiParams } = usePagination();
 const appStore = useAppStore();
 const {
     onSort,
@@ -36,14 +32,18 @@ const {
 } = useTable();
 
 const upsertModal = ref(null);
+const pageSize = ref(100);
+const pageNumber = ref(1);
 const defaultSort = { by: 'name', isDesc: false };
+const activeSort = ref({ ...defaultSort });
 
 function fetchData() {
     return $apiSearch.tryCatch(
         async () => {
             const response = await $apiSearch.run({
                 ...getSortApiParams(),
-                ...getPaginationApiParams(),
+                _page: pageNumber.value,
+                _pageSize: pageSize.value
             });
 
             setTableResults(response.data);
@@ -68,14 +68,12 @@ function onDeleteItem(id: string) {
 }
 
 function onTableSort(val) {
+    activeSort.value = val;
     onSort(val);
     fetchData();
 }
 
-function onPaginationChange(data) {
-    setData(data);
-    fetchData();
-}
+watch([pageSize, pageNumber], fetchData);
 
 onMounted(() => {
     onSort(defaultSort);
@@ -84,82 +82,85 @@ onMounted(() => {
 </script>
 
 <template>
-    <page-title>{{ $t('Product types') }}</page-title>
+    <PageTitle>{{ t('Product types') }}</PageTitle>
 
     <div class="mb-4 text-right">
-        <fig-button
-            variant="primary"
-            @click="upsertModal.show()">
-            {{ $t('Add product type') }}
-        </fig-button>
+        <Button @click="upsertModal.show()">
+            {{ t('Add product type') }}
+        </Button>
     </div>
 
-    <fig-overlay :show="$apiSearch.isLoading.value">
-        <fig-pagination-wrapper
-            bottom
-            :total-rows="tableTotalResultsCount"
-            @pageSize="onPaginationChange"
-            @pageNumber="onPaginationChange">
-            <fig-table-simple
-                striped
-                hover
-                @sort="onTableSort"
-                :default-sort-by="defaultSort.by"
-                :default-sort-desc="defaultSort.isDesc">
-                <template #head>
-                    <fig-tr>
-                        <fig-th sort="name" class="text-left">{{ $t('Name') }}</fig-th>
-                        <fig-th sort="description" class="text-left">{{ $t('Description') }}</fig-th>
-                        <fig-th sort="published" class="text-left">{{ $t('Published') }}</fig-th>
-                        <fig-th class="text-center">{{ $t('Actions') }}</fig-th>
-                    </fig-tr>
-                </template>
+    <Overlay :show="$apiSearch.isLoading.value">
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <SortableTableHead
+                        sort-key="name"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Name') }}</SortableTableHead>
+                    <SortableTableHead
+                        sort-key="description"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Description') }}</SortableTableHead>
+                    <SortableTableHead
+                        sort-key="published"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Published') }}</SortableTableHead>
+                    <TableHead class="text-center">{{ t('Actions') }}</TableHead>
+                </TableRow>
+            </TableHeader>
 
-                <fig-tr v-for="(obj, idx) in tableResults" :key="idx">
+            <TableBody>
+                <TableRow v-for="(obj, idx) in tableResults" :key="idx">
                     <!-- name -->
-                    <fig-td>
-                        {{ obj.name }}
-                    </fig-td>
+                    <TableCell>{{ obj.name }}</TableCell>
 
                     <!-- description -->
-                    <fig-td>
-                        {{ obj.description }}
-                    </fig-td>
+                    <TableCell>{{ obj.description }}</TableCell>
 
                     <!-- published -->
-                    <fig-td>
-                        <fig-boolean-tag :value="obj.published" />
-                    </fig-td>
+                    <TableCell>
+                        <BooleanBadge :value="obj.published" />
+                    </TableCell>
 
                     <!-- actions -->
-                    <fig-td>
-                        <div class="flex items-center justify-center w-full gap-4">
-                            <fig-button
-                                variant="plain"
-                                iconOnly
-                                icon="edit"
-                                @click="upsertModal.show(obj.id)" />
+                    <TableCell>
+                        <div class="flex items-center justify-center w-full gap-2">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                @click="upsertModal.show(obj.id)">
+                                <PencilIcon />
+                            </Button>
 
-                            <fig-pop-confirm
-                                @confirm="onDeleteItem(obj.id)">
+                            <PopConfirm @confirm="onDeleteItem(obj.id)">
                                 <template v-slot:reference>
-                                    <fig-button
-                                        variant="danger"
-                                        iconOnly
-                                        icon="trash" />
+                                    <Button variant="destructive" size="icon">
+                                        <Trash2Icon />
+                                    </Button>
                                 </template>
-                                {{ $t('Delete this item?') }}
-                            </fig-pop-confirm>
+                                {{ t('Delete this item?') }}
+                            </PopConfirm>
                         </div>
-                    </fig-td>
-                </fig-tr>
+                    </TableCell>
+                </TableRow>
 
-                <fig-tr-no-results v-if="tableHasNoResults" :colspan="8" />
-            </fig-table-simple>
-        </fig-pagination-wrapper>
-    </fig-overlay>
+                <TableRow v-if="tableHasNoResults">
+                    <TableCell colspan="4" class="text-center text-muted-foreground">{{ t('No data') }}</TableCell>
+                </TableRow>
+            </TableBody>
+        </Table>
 
-    <product-type-upsert-modal
+        <DataPagination
+            v-model:page-size="pageSize"
+            v-model:page-number="pageNumber"
+            :total-rows="tableTotalResultsCount" />
+    </Overlay>
+
+    <ProductTypeUpsertModal
         ref="upsertModal"
         @success="fetchData" />
 </template>

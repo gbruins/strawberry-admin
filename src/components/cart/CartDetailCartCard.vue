@@ -6,12 +6,12 @@ export default {
 
 <script setup>
 import { ref } from 'vue';
-import FigJsonTree from '@/components/figleaf/jsonTree/JsonTree.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigIcon from '@/components/figleaf/icon/FigIcon.vue';
-import FigModal from '@/components/figleaf/modal/Modal.vue';
-import FigTextCard from '@/components/figleaf/textCard/TextCard.vue';
-import FigIconLabel from '@/components/figleaf/iconLabel/IconLabel.vue';
+import { useI18n } from 'vue-i18n';
+import { ShoppingCartIcon } from '@lucide/vue';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import JsonTree from '@/components/JsonTree.vue';
 
 const props = defineProps({
     cart: {
@@ -19,41 +19,33 @@ const props = defineProps({
     }
 });
 
-const cart_modal = ref(null);
-
-function showCartDataModal() {
-    cart_modal.value.show();
-}
+const { t } = useI18n();
+const open = ref(false);
 </script>
 
 <template>
-    <fig-text-card variant="white">
-        <template v-slot:header_left>
-            <fig-icon-label>
-                <template v-slot:left>
-                    <fig-icon
-                        icon="cart"
-                        width="26"
-                        height="26"
-                        :stroke-width="1" />
-                </template>
-                <div class="text-lg font-bold">{{ $t('Cart') }}</div>
-            </fig-icon-label>
-        </template>
+    <Card>
+        <CardHeader class="border-b">
+            <CardTitle class="flex items-center gap-2 text-lg font-bold">
+                <ShoppingCartIcon class="size-6" />
+                {{ t('Cart') }}
+            </CardTitle>
+        </CardHeader>
 
-        <fig-button
-            variant="plain"
-            size="sm"
-            @click="showCartDataModal">{{ $t('view raw data') }}</fig-button>
+        <CardContent>
+            <Button variant="outline" size="sm" @click="open = true">{{ t('view raw data') }}</Button>
 
-        <!-- raw data modal -->
-        <fig-modal
-            ref="cart_modal"
-            size="lg"
-            close-button>
-            <fig-json-tree
-                :data="cart"
-                :level="1" />
-        </fig-modal>
-    </fig-text-card>
+            <!-- raw data modal -->
+            <Dialog v-model:open="open">
+                <DialogContent class="sm:max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>{{ t('Cart') }}</DialogTitle>
+                    <DialogDescription class="sr-only">{{ t('view raw data') }}</DialogDescription>
+                    </DialogHeader>
+
+                    <JsonTree :data="cart" :level="1" />
+                </DialogContent>
+            </Dialog>
+        </CardContent>
+    </Card>
 </template>

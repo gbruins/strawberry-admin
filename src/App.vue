@@ -2,9 +2,8 @@
 import { watch } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import DefaultLayout from '@/components/layouts/DefaultLayout.vue';
-import FigToaster from '@/components/figleaf/toast/Toaster.vue';
-import FigSvgSprite from '@/components/figleaf/svgIcon/SvgSprite.vue';
-import useToast from '@/components/figleaf/toast/useToast';
+import { Toaster } from '@/components/ui/sonner';
+import useToast from '@/composables/useToast';
 
 const route = useRoute();
 const { removeAllToasts } = useToast();
@@ -18,8 +17,7 @@ watch(
 </script>
 
 <template>
-    <fig-svg-sprite />
-    <fig-toaster :max-toasts="10" />
+    <Toaster rich-colors />
 
     <component :is="$route.meta.layout || DefaultLayout">
         <template #default>

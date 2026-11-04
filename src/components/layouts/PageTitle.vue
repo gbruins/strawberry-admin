@@ -11,7 +11,7 @@
 .page-title {
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
-    color: var(--color-gray-800);
+    color: var(--foreground);
     display: flex;
     align-items: center;
 }

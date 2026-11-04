@@ -5,103 +5,89 @@ export default {
 </script>
 
 <script setup>
-import FigIcon from '@/components/figleaf/icon/FigIcon.vue';
-import FigTextCard from '@/components/figleaf/textCard/TextCard.vue';
-import FigIconLabel from '@/components/figleaf/iconLabel/IconLabel.vue';
-import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
-import FigTh from '@/components/figleaf/tableSimple/Th.vue';
-import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
-import FigTd from '@/components/figleaf/tableSimple/Td.vue';
-import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
-import FigMoney from '@/components/figleaf/money/Money.vue';
-import FigNumber from '@/components/figleaf/number/Number.vue';
-import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
-import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-
+import { useI18n } from 'vue-i18n';
+import { CookieIcon } from '@lucide/vue';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import Money from '@/components/Money.vue';
+import NumberDisplay from '@/components/NumberDisplay.vue';
 
 const props = defineProps({
     cart: {
         type: Object
     }
 });
+
+const { t } = useI18n();
 </script>
 
 <template>
-    <fig-text-card variant="white">
-        <template v-slot:header_left>
-            <fig-icon-label>
-                <template v-slot:left>
-                    <fig-icon
-                        icon="cookie"
-                        width="26"
-                        height="26"
-                        :stroke-width="1" />
-                </template>
-                <div class="text-lg font-bold">{{ $t('Cart items') }}</div>
-            </fig-icon-label>
-        </template>
+    <Card>
+        <CardHeader class="border-b">
+            <CardTitle class="flex items-center gap-2 text-lg font-bold">
+                <CookieIcon class="size-6" />
+                {{ t('Cart items') }}
+            </CardTitle>
+        </CardHeader>
 
-        <fig-table-simple
-            striped
-            hover>
-            <template #head>
-                <fig-tr>
-                    <fig-th>{{ $t('Product') }}</fig-th>
-                    <fig-th>{{ $t('Quantity') }}</fig-th>
-                    <fig-th>{{ $t('Price') }}</fig-th>
-                    <fig-th>{{ $t('Subtotal') }}</fig-th>
-                </fig-tr>
-            </template>
+        <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>{{ t('Product') }}</TableHead>
+                        <TableHead class="text-right">{{ t('Quantity') }}</TableHead>
+                        <TableHead class="text-right">{{ t('Price') }}</TableHead>
+                        <TableHead class="text-right">{{ t('Subtotal') }}</TableHead>
+                    </TableRow>
+                </TableHeader>
 
-            <fig-tr v-for="(obj, idx) in props.cart?.cart_items" :key="idx">
-                <!-- product -->
-                <fig-td>
-                    <div>{{ obj.product.title }}</div>
-                    <div
-                        v-if="obj.product.description"
-                        class="pl-4 text-xs text-gray-500">{{ obj.product.description }}</div>
-                </fig-td>
+                <TableBody>
+                    <TableRow v-for="(obj, idx) in props.cart?.cart_items" :key="idx">
+                        <!-- product -->
+                        <TableCell>
+                            <div>{{ obj.product.title }}</div>
+                            <div
+                                v-if="obj.product.description"
+                                class="pl-4 text-xs text-muted-foreground">{{ obj.product.description }}</div>
+                        </TableCell>
 
-                <!-- quantity -->
-                <fig-td class="text-right">
-                    <fig-number :value="obj.qty" />
-                </fig-td>
+                        <!-- quantity -->
+                        <TableCell class="text-right">
+                            <NumberDisplay :value="obj.qty" />
+                        </TableCell>
 
-                <!-- price -->
-                <fig-td class="text-right">
-                    <fig-money :cents="obj.product.base_price" />
-                </fig-td>
+                        <!-- price -->
+                        <TableCell class="text-right">
+                            <Money :cents="obj.product.base_price" />
+                        </TableCell>
 
-                <!-- subtotal -->
-                <fig-td class="text-right">
-                    <fig-money :cents="obj.price_subtotal" />
-                </fig-td>
-            </fig-tr>
+                        <!-- subtotal -->
+                        <TableCell class="text-right">
+                            <Money :cents="obj.price_subtotal" />
+                        </TableCell>
+                    </TableRow>
 
-            <fig-tr-no-results v-if="!props.cart?.cart_items?.length" :colspan="4" />
-        </fig-table-simple>
+                    <TableRow v-if="!props.cart?.cart_items?.length">
+                        <TableCell colspan="4" class="text-center text-muted-foreground">{{ t('No data') }}</TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
 
+            <div class="flex justify-end w-full mt-2">
+                <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+                    <!-- sub total -->
+                    <div class="text-muted-foreground">{{ t('Subtotal') }}:</div>
+                    <div class="font-mono text-right"><Money :cents="cart?.price_subtotal" /></div>
 
-        <div class="flex justify-end w-full mt-2">
-            <fig-label-value-group density="md" display="table" class="text-sm">
-                <!-- sub total -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Subtotal') }}:</template>
-                    <div class="font-mono text-right"><fig-money :cents="cart?.price_subtotal" /></div>
-                </fig-label-value>
+                    <!-- sales tax -->
+                    <div class="text-muted-foreground">{{ t('Tax') }}:</div>
+                    <div class="font-mono text-right"><Money :cents="cart?.sales_tax" /></div>
 
-                <!-- sales tax -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Tax') }}:</template>
-                    <div class="font-mono text-right"><fig-money :cents="cart?.sales_tax" /></div>
-                </fig-label-value>
-
-                <!-- grand total -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Grand total') }}:</template>
-                    <div class="font-mono text-right"><fig-money :cents="cart?.grand_total" /></div>
-                </fig-label-value>
-            </fig-label-value-group>
-        </div>
-    </fig-text-card>
+                    <!-- grand total -->
+                    <div class="text-muted-foreground">{{ t('Grand total') }}:</div>
+                    <div class="font-mono text-right"><Money :cents="cart?.grand_total" /></div>
+                </div>
+            </div>
+        </CardContent>
+    </Card>
 </template>

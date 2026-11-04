@@ -1,76 +1,102 @@
 <script setup lang="ts">
-import { ref, reactive, computed, type Ref } from 'vue';
+import { reactive, computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { useRouter, RouterLink } from 'vue-router';
 import { useAppStore } from '@/stores/app.js';
-import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import useToast from '@/components/figleaf/toast/useToast';
-import useApi from '@/composables/useApi';
+import { supabase } from '@/plugins/supabase';
+import useExceptionToast from '@/composables/useExceptionToast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-const $apiLogin = useApi('auth.login');
-const { errorToast } = useToast();
 const router = useRouter();
 const { t } = useI18n();
 const appStore = useAppStore();
+const { showExceptionToast } = useExceptionToast();
 
 const form = reactive({
-    username: '',
+    email: '',
     password: ''
 });
 
+const isLoading = ref(false);
+
 const buttonIsEnabled = computed(() => {
-    return form.username?.trim().length && form.password?.trim().length;
+    return form.email?.trim().length && form.password?.trim().length;
 });
 
-function onSubmit() {
-    return $apiLogin.tryCatch(
-        async () => {
-            const response = await $apiLogin.run({
-                ...form
-            });
+async function onSubmit() {
+    isLoading.value = true;
 
-            appStore.loggedInUser = response.data.username;
-            appStore.updateAllowedStreetsState();
-            appStore.updateProductTypesState();
-            router.push({ name: 'dashboard' });
-        },
-        () => {
-            appStore.loggedInUser = null;
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: form.email,
+            password: form.password
+        });
+
+        if (error) {
+            throw error;
         }
-    );
+
+        appStore.loggedInUser = data.user.email;
+        await appStore.loadMe();
+        appStore.updateAllowedStreetsState();
+        appStore.updateProductTypesState();
+        router.push({ name: 'dashboard' });
+    }
+    catch (error) {
+        console.error(error);
+        showExceptionToast(error);
+        appStore.clearSession();
+    }
+    finally {
+        isLoading.value = false;
+    }
 }
 </script>
 
 <template>
-    <div class="mx-auto w-96 mt-24">
-        <div class="text-2xl font-semibold mb-6 text-center text-gray-500">
-            {{ $t('Login') }}
-        </div>
-        <div class="p-10 border border-gray-200 rounded shadow-lg bg-gray-50">
-            <form class="grid grid-cols-1 gap-4 " @submit.prevent="onSubmit">
-                <fig-form-input-text
-                    v-model="form.username"
-                    :placeholder="$t('Username')" />
+    <div class="w-full max-w-96">
+        <Card>
+            <CardHeader>
+                <CardTitle class="text-center text-xl">{{ t('Login') }}</CardTitle>
+            </CardHeader>
 
-                <fig-form-input-text
-                    v-model="form.password"
-                    :placeholder="$t('Password')"
-                    type="password"
-                    :autocomplete="false" />
+            <CardContent>
+                <form class="grid grid-cols-1 gap-4" @submit.prevent="onSubmit">
+                    <div class="grid gap-1.5">
+                        <Label for="login-email">{{ t('Email') }}</Label>
+                        <Input
+                            id="login-email"
+                            v-model="form.email"
+                            type="email"
+                            autocomplete="email" />
+                    </div>
 
-                <div>
-                    <fig-button
+                    <div class="grid gap-1.5">
+                        <Label for="login-password">{{ t('Password') }}</Label>
+                        <Input
+                            id="login-password"
+                            v-model="form.password"
+                            type="password"
+                            autocomplete="current-password" />
+                    </div>
+
+                    <Button
                         type="submit"
-                        variant="primary"
-                        size="md"
-                        block
-                        :disabled="!buttonIsEnabled">
-                        {{ $t('Login') }}
-                    </fig-button>
-                </div>
-            </form>
-        </div>
+                        class="w-full"
+                        :disabled="!buttonIsEnabled || isLoading">
+                        {{ t('Login') }}
+                    </Button>
+
+                    <RouterLink
+                        :to="{ name: 'forgot_password' }"
+                        class="text-sm text-center text-muted-foreground hover:underline">
+                        {{ t('Forgot your password?') }}
+                    </RouterLink>
+                </form>
+            </CardContent>
+        </Card>
     </div>
 </template>

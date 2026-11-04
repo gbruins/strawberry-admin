@@ -24,7 +24,8 @@ coverage
 *.sln
 *.sw?
 
-/src/**/*.env
+*.env
+!.env.example
 
 *.tsbuildinfo
 

@@ -1,264 +1,178 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { RouterLink } from 'vue-router';
+import { onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter, RouterLink } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import {
+    LayoutDashboardIcon,
+    ShoppingCartIcon,
+    ClockIcon,
+    BookOpenIcon,
+    PizzaIcon,
+    TagIcon,
+    MapPinIcon,
+    BadgePercentIcon,
+    MailIcon,
+    LogOutIcon,
+    ChevronsUpDownIcon,
+    StoreIcon,
+    ChefHatIcon
+} from '@lucide/vue';
+import {
+    SidebarProvider,
+    Sidebar,
+    SidebarHeader,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
+    SidebarInset,
+    SidebarTrigger,
+    SidebarRail
+} from '@/components/ui/sidebar';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/stores/app.js';
-import FigSvgIcon from '@/components/figleaf/svgIcon/SvgIcon.vue';
-import FigDropdown from '@/components/figleaf/dropdown/Dropdown.vue';
-import FigDropdownButton from '@/components/figleaf/dropdown/DropdownButton.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import useApi from '@/composables/useApi';
+import { supabase } from '@/plugins/supabase';
 import useBroadcastChannels from '@/composables/useBroadcastChannels';
 
-const $apiLogout = useApi('auth.logout');
+const { t } = useI18n();
 const appStore = useAppStore();
 const router = useRouter();
+const route = useRoute();
 const { getLogoutChannel } = useBroadcastChannels();
 
-const sidebarOpened = ref(true);
-
-function toggleSidebar() {
-    sidebarOpened.value = !sidebarOpened.value;
-}
-
-function onUserMenuSelected(value) {
-    if (value === 'logout') {
-        logout();
-    }
-}
+const navItems = [
+    { name: 'dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
+    { name: 'carts', label: 'Carts', icon: ShoppingCartIcon },
+    { name: 'services', label: 'Service', icon: ClockIcon },
+    { name: 'menus', label: 'Menus', icon: BookOpenIcon },
+    { name: 'products', label: 'Products', icon: PizzaIcon },
+    { name: 'product_types', label: 'Product types', icon: TagIcon },
+    { name: 'allowed_streets', label: 'Allowed streets', icon: MapPinIcon },
+    { name: 'address_discounts', label: 'Address discounts', icon: BadgePercentIcon },
+    { name: 'subscribers', label: 'Subscribers', icon: MailIcon },
+    { name: 'kitchen_stations', label: 'Kitchen stations', icon: ChefHatIcon },
+    { name: 'tenant_address', label: 'Store address', icon: StoreIcon }
+];
 
 function onLogout() {
-    appStore.loggedInUser = null;
+    appStore.clearSession();
     router.push({ name: 'login' });
 }
 
-function logout() {
-    return $apiLogout.tryCatch(
-        async () => {
-            await $apiLogout.run();
-            onLogout();
-        }
-    );
+async function logout() {
+    try {
+        await supabase.auth.signOut();
+    }
+    catch (error) {
+        console.error('Failed to sign out of Supabase', error);
+    }
+    finally {
+        onLogout();
+    }
 }
 
+// Closed on unmount — an open BroadcastChannel keeps its onmessage handler alive even after
+// this component unmounts, so without this a transient mount (e.g. the brief pre-navigation
+// paint before the router's initial route resolves) would leave a listener that fires forever
+// for the rest of the tab's life, including on routes that never mount this layout again.
+let logoutChannel = null;
+
 onMounted(() => {
-    const logoutChannel = getLogoutChannel();
+    logoutChannel = getLogoutChannel();
 
     logoutChannel.onmessage = (event) => {
-        // console.log('Received message on logout channel:', event.data);
         if (event.data?.type === 'logout') {
             onLogout();
         }
     };
 });
+
+onUnmounted(() => {
+    logoutChannel?.close();
+    logoutChannel = null;
+});
 </script>
 
 <template>
-    <div class="flex min-h-screen relative text-sm">
-        <aside
-            class="text-gray-700 w-48 inset-y-0 left-0 transform transition duration-200 ease-in-out z-10 relative border-r border-gray-300 shrink-0"
-            :class="{'layout-sidenav-opened': sidebarOpened, 'layout-sidenav-closed': !sidebarOpened}"
-            style="background: #f3f4f6;">
+    <SidebarProvider>
+        <Sidebar collapsible="icon">
+            <SidebarHeader>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton size="lg" as-child>
+                            <RouterLink :to="{ name: 'products' }">
+                                <PizzaIcon class="size-5" />
+                                <span class="font-semibold">Strawberry Pizza</span>
+                            </RouterLink>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarHeader>
 
-            <div class="layout-sidenav-toggle" @click="toggleSidebar"></div>
+            <SidebarContent>
+                <SidebarGroup>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <SidebarMenuItem v-for="item in navItems" :key="item.name">
+                                <SidebarMenuButton
+                                    as-child
+                                    :is-active="route.name === item.name"
+                                    :tooltip="t(item.label)">
+                                    <RouterLink :to="{ name: item.name }">
+                                        <component :is="item.icon" />
+                                        <span>{{ t(item.label) }}</span>
+                                    </RouterLink>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            </SidebarContent>
 
-            <div class="layout-sidenav-content">
-                <div class="layout-sidenav-header">
-                    <!-- logo -->
-                    <router-link  :to="{ name: 'products' }">Strawberry Pizza</router-link >
+            <SidebarRail />
+        </Sidebar>
+
+        <SidebarInset>
+            <header class="flex items-center justify-between gap-2 border-b px-4 py-3">
+                <div class="flex items-center gap-2">
+                    <SidebarTrigger />
+                    <div id="layout-header-title"></div>
                 </div>
 
-                <div class="grow px-2">
-                    <router-link
-                        class="nav-item-main"
-                        active-class="nav-item-main--active"
-                        :to="{ name: 'dashboard' }">{{ $t('Dashboard') }}</router-link>
-
-                    <router-link
-                        class="nav-item-main"
-                        active-class="nav-item-main--active"
-                        :to="{ name: 'carts' }">{{ $t('Carts') }}</router-link>
-
-                    <router-link
-                        class="nav-item-main"
-                        active-class="nav-item-main--active"
-                        :to="{ name: 'services' }">{{ $t('Service') }}</router-link>
-
-                    <router-link
-                        class="nav-item-main"
-                        active-class="nav-item-main--active"
-                        :to="{ name: 'menus' }">{{ $t('Menus') }}</router-link>
-
-                    <router-link
-                        class="nav-item-main"
-                        active-class="nav-item-main--active"
-                        :to="{ name: 'products' }">{{ $t('Products') }}</router-link>
-
-                    <router-link
-                        class="nav-item-main"
-                        active-class="nav-item-main--active"
-                        :to="{ name: 'product_types' }">{{ $t('Product types') }}</router-link>
-
-                    <router-link
-                        class="nav-item-main"
-                        active-class="nav-item-main--active"
-                        :to="{ name: 'allowed_streets' }">{{ $t('Allowed streets') }}</router-link>
-
-                    <router-link
-                        class="nav-item-main"
-                        active-class="nav-item-main--active"
-                        :to="{ name: 'address_discounts' }">{{ $t('Address discounts') }}</router-link>
-                </div>
-
-                <!-- sidenav footer -->
-                <div class="flex items-center p-2" :class="{'justify-center': !sidebarOpened, 'justify-end': sidebarOpened}">
-                    <button
-                        class="layout-sidenav-toggle-button"
-                        @click="toggleSidebar">
-                        <fig-svg-icon
-                            :icon="sidebarOpened ? 'chevrons-left': 'chevrons-right'"
-                            :width="30"
-                            :height="30"
-                            :stroke-width="1.5" />
-                    </button>
-                </div>
-            </div>
-        </aside>
-
-        <div
-            class="layout-sidenav-overlay"
-            v-if="sidebarOpened"
-            @click="toggleSidebar"></div>
-
-
-        <!-- main content -->
-        <div class="main-content">
-            <!-- header -->
-            <header class="layout-header">
-                <div id="layout-header-title"></div>
-                <div>
-                    <fig-dropdown
-                        v-if="appStore.loggedInUser"
-                        @selected="onUserMenuSelected">
-                        <template v-slot:toggler>
-                            <fig-button
-                                variant="ghost"
-                                :uppercase="false"
-                                size="sm">{{ appStore.loggedInUser }}</fig-button>
-                        </template>
-                        <fig-dropdown-button value="logout">{{ $t('Logout') }}</fig-dropdown-button>
-                    </fig-dropdown>
-                </div>
+                <DropdownMenu v-if="appStore.loggedInUser">
+                    <DropdownMenuTrigger as-child>
+                        <Button variant="ghost" size="sm">
+                            {{ appStore.loggedInUser }}
+                            <ChevronsUpDownIcon class="size-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem @click="logout">
+                            <LogOutIcon />
+                            {{ t('Logout') }}
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </header>
 
-            <div class="w-full">
-                <div class="md:p-6 sm:p-4">
-                    <slot />
-                </div>
+            <div class="p-4 md:p-6">
+                <slot />
             </div>
-        </div>
-    </div>
+        </SidebarInset>
+    </SidebarProvider>
 </template>
 
-<style scoped>
-.layout-sidenav-toggle {
-    flex-shrink: 0;
-    width: 8px;
-    position: absolute;
-    border-left: 4px solid transparent;
-    height: 100%;
-    transition: border-color .2s ease 0s;
-    cursor: ew-resize;
-    right: -8px;
-    top: 0;
-    z-index: 1;
-}
-.layout-sidenav-toggle:hover {
-    border-color: var(--color-blue-400);
-}
-
-.layout-sidenav-toggle-button {
-    border-radius: var(--radius-sm);
-    padding: 4px;
-}
-.layout-sidenav-toggle-button:hover {
-    background-color: var(--color-gray-200);
-}
-
-.layout-sidenav-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(243, 244, 246, 0.4);
-    margin-bottom: 1rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    height: 48px;
-}
-
-.layout-sidenav-content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    flex-grow: 1;
-}
-
-.layout-sidenav-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: var(--color-gray-500);
-    opacity: 0.5;  /* background opacity? */
-    transition: opacity 0.2s ease-in-out;
-}
-
-.layout-sidenav-opened {
-    position: absolute;
-    transform: translateX(0);
-}
-
-@media (min-width: 768px) {
-    .layout-sidenav-overlay {
-        display: none;
-    }
-
-    .layout-sidenav-opened {
-        position: relative;
-    }
-}
-
-.layout-sidenav-closed {
-    transform: translateX(-94%);
-    position: absolute
-}
-
-.layout-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-}
-
-.nav-item-main {
-    font-size: var(--text-xs);
-    font-weight: var(--font-weight-medium);
-    text-transform: uppercase;
+<style>
+.group\/menu-item a {
     text-decoration: none;
-    color: var(--color-gray-700);
-    display: block;
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
-}
-.nav-item-main:hover {
-    background-color: var(--color-gray-200);
-}
-.nav-item-main--active {
-    background-color: var(--color-blue-100);
-    color: var(--color-blue-700);
-    font-weight: 700 !important;
-}
-
-.main-content {
-    flex-grow: 1;
-    padding-bottom: 80px;
+    color: var(--color-gray-600)
 }
 </style>

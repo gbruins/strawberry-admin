@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import  { ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
-import FigTag from '@/components/figleaf/tag/Tag.vue';
+import Overlay from '@/components/Overlay.vue';
+import Format8601 from '@/components/Format8601.vue';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import CartDetailPaymentCard from '@/components/cart/CartDetailPaymentCard.vue';
 import CartDetailBillingCard from '@/components/cart/CartDetailBillingCard.vue';
 import CartDetailCartCard from '@/components/cart/CartDetailCartCard.vue';
@@ -37,42 +37,44 @@ onMounted(() => {
 </script>
 
 <template>
-    <page-title>{{ $t('Cart') }}</page-title>
+    <PageTitle>{{ t('Cart') }}</PageTitle>
 
-    <fig-overlay :show="$apiRead.isLoading.value">
+    <Overlay :show="$apiRead.isLoading.value">
         <div class="grid grid-cols-1 gap-10">
             <div class="grid grid-cols-4 gap-10">
                 <!-- cart status -->
-                <fig-label-value>
-                    <template v-slot:label>
-                        <span class="font-semibold">{{ $t('Status') }}</span>:
-                    </template>
+                <div class="grid gap-1.5">
+                    <Label class="font-semibold">{{ t('Status') }}:</Label>
 
-                    <div v-if="cartData?.closed_at">
-                        <fig-tag variant="success">{{ $t('Closed') }}</fig-tag>
-                        <fig-format8601 :date="cartData?.closed_at" />
+                    <div v-if="cartData?.closed_at" class="flex items-center gap-2">
+                        <Badge variant="success">{{ t('Closed') }}</Badge>
+                        <Format8601 :date="cartData?.closed_at" />
                     </div>
-                    <fig-tag v-else variant="error">{{ $t('Open') }}</fig-tag>
-                </fig-label-value>
+                    <Badge v-else variant="destructive">{{ t('Open') }}</Badge>
+                </div>
 
                 <!-- cart created at -->
-                <fig-label-value>
-                    <template v-slot:label>
-                        <span class="font-semibold">{{ $t('Created') }}</span>:
-                    </template>
-                    <fig-format8601 :date="cartData?.created_at" />
-                </fig-label-value>
+                <div class="grid gap-1.5">
+                    <Label class="font-semibold">{{ t('Created') }}:</Label>
+                    <Format8601 :date="cartData?.created_at" />
+                </div>
+
+                <!-- pickup code -->
+                <div class="grid gap-1.5">
+                    <Label class="font-semibold">{{ t('Pickup code') }}:</Label>
+                    <div>{{ cartData?.pickup_code ?? '—' }}</div>
+                </div>
             </div>
 
-            <cart-detail-items-card :cart="cartData" />
+            <CartDetailItemsCard :cart="cartData" />
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-                <cart-detail-cart-card :cart="cartData" />
-                <cart-detail-billing-card :cart="cartData" />
-                <cart-detail-payment-card :cart="cartData" />
+                <CartDetailCartCard :cart="cartData" />
+                <CartDetailBillingCard :cart="cartData" />
+                <CartDetailPaymentCard :cart="cartData" />
             </div>
 
-            <cart-detail-notes-card :cart="cartData" />
+            <CartDetailNotesCard :cart="cartData" />
         </div>
-    </fig-overlay>
+    </Overlay>
 </template>

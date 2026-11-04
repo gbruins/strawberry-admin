@@ -1,26 +1,28 @@
 <script setup lang="ts">
-import  { ref, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import FigTableSimple from '@/components/figleaf/tableSimple/TableSimple.vue';
-import FigTh from '@/components/figleaf/tableSimple/Th.vue';
-import FigTr from '@/components/figleaf/tableSimple/Tr.vue';
-import FigTd from '@/components/figleaf/tableSimple/Td.vue';
-import FigTrNoResults from '@/components/figleaf/tableSimple/TrNoResults.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
-import FigPaginationWrapper from '@/components/figleaf/pagination/paginationWrapper/PaginationWrapper.vue';
-import FigPopConfirm from '@/components/figleaf/popConfirm/PopConfirm.vue';
-import FigFormat8601 from '@/components/figleaf/format8601/Format8601.vue';
+import SearchFilterLayout from '@/components/layouts/SearchFilterLayout.vue';
+import FilterGrid from '@/components/layouts/FilterGrid.vue';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import SortableTableHead from '@/components/SortableTableHead.vue';
+import DataPagination from '@/components/DataPagination.vue';
+import PopConfirm from '@/components/PopConfirm.vue';
+import DateTimePicker from '@/components/DateTimePicker.vue';
+import { PencilIcon, Trash2Icon, MailIcon } from '@lucide/vue';
+import Format8601 from '@/components/Format8601.vue';
 import ServiceUpsertModal from '@/components/services/ServiceUpsertModal.vue';
 import useApi from '@/composables/useApi';
 import useTable from '@/composables/useTable';
-import usePagination from '@/components/figleaf/pagination/usePagination.js';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const $apiSearch = useApi('service.search');
 const $apiMenus = useApi('serviceMenu.search');
 const menus = ref<Record<string, { title: string, published: boolean }>>({});
+const { t } = useI18n();
 
 // A service whose menu is missing (deleted) or unpublished shows no menu to visitors
 function menuProblem(id: string | null) {
@@ -31,10 +33,15 @@ function menuProblem(id: string | null) {
     const menu = menus.value[id];
     return !menu ? t('Menu deleted') : (!menu.published ? t('Menu not published') : null);
 }
+
+// Hide the notify button once the window it'd be advertising has already ended, so staff
+// can't email subscribers about an opening that's no longer actually available.
+function serviceHasEnded(endAt: string) {
+    return new Date(endAt).getTime() < Date.now();
+}
 const $apiDelete = useApi('service.delete');
-const { t } = useI18n();
-const { successToast } = useToast();
-const { setData, getPaginationApiParams } = usePagination();
+const $apiNotify = useApi('notification.send');
+const { successToast, addToast } = useToast();
 const {
     onSort,
     getSortApiParams,
@@ -46,7 +53,29 @@ const {
 } = useTable();
 
 const upsertModal = ref(null);
+const pageSize = ref(100);
+const pageNumber = ref(1);
 const defaultSort = { by: 'start_at', isDesc: true };
+const activeSort = ref({ ...defaultSort });
+
+// Defaults to "now" so past services aren't retrieved on first load — staff manage upcoming
+// openings here, not a historical log. Cleared (set to null) to see everything, including past.
+const filters = reactive({
+    endsAfter: new Date().toISOString()
+});
+
+// The soonest service that hasn't ended yet, among the currently loaded rows — same
+// "current or next" definition the public /services/next endpoint uses (ServiceState.js):
+// end_at in the future, ordered by start_at ascending, first one wins.
+const nextUpcomingId = computed(() => {
+    const now = Date.now();
+
+    const upcoming = tableResults.value
+        .filter((s) => s.start_at && s.end_at && new Date(s.end_at).getTime() > now)
+        .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+
+    return upcoming[0]?.id ?? null;
+});
 
 function fetchMenus() {
     return $apiMenus.tryCatch(
@@ -60,10 +89,17 @@ function fetchMenus() {
 function fetchData() {
     return $apiSearch.tryCatch(
         async () => {
-            const response = await $apiSearch.run({
+            const params: Record<string, any> = {
                 ...getSortApiParams(),
-                ...getPaginationApiParams(),
-            });
+                _page: pageNumber.value,
+                _pageSize: pageSize.value
+            };
+
+            if (filters.endsAfter) {
+                params.end_at = JSON.stringify({ gte: filters.endsAfter });
+            }
+
+            const response = await $apiSearch.run(params);
 
             setTableResults(response.data);
             setTableTotalResultsCount(response.pagination.total);
@@ -85,15 +121,33 @@ function onDeleteItem(id: string) {
     );
 }
 
+function onNotify(id: string) {
+    return $apiNotify.tryCatch(
+        async () => {
+            const response = await $apiNotify.run(id);
+
+            if (response.data.recipientCount === 0) {
+                addToast({ title: t('No subscribers to notify yet') });
+                return;
+            }
+
+            successToast({
+                title: t('Notification sent'),
+                text: t('Sent to {count} subscriber(s)', { count: response.data.recipientCount })
+            });
+
+            fetchData();
+        }
+    );
+}
+
 function onTableSort(val) {
+    activeSort.value = val;
     onSort(val);
     fetchData();
 }
 
-function onPaginationChange(data) {
-    setData(data);
-    fetchData();
-}
+watch([pageSize, pageNumber], fetchData);
 
 onMounted(() => {
     onSort(defaultSort);
@@ -103,103 +157,142 @@ onMounted(() => {
 </script>
 
 <template>
-    <page-title>{{ $t('Service') }}</page-title>
+    <PageTitle>{{ t('Service') }}</PageTitle>
 
     <div class="mb-4 text-right">
-        <fig-button
-            variant="primary"
-            @click="upsertModal.show()">
-            {{ $t('Add service') }}
-        </fig-button>
+        <Button @click="upsertModal.show()">
+            {{ t('Add service') }}
+        </Button>
     </div>
 
-    <fig-overlay :show="$apiSearch.isLoading.value">
-        <fig-pagination-wrapper
-            bottom
-            :total-rows="tableTotalResultsCount"
-            @pageSize="onPaginationChange"
-            @pageNumber="onPaginationChange">
-            <fig-table-simple
-                striped
-                hover
-                @sort="onTableSort"
-                :default-sort-by="defaultSort.by"
-                :default-sort-desc="defaultSort.isDesc">
-                <template #head>
-                    <fig-tr>
-                        <fig-th sort="start_at" class="text-left">{{ $t('Start at') }}</fig-th>
-                        <fig-th sort="end_at" class="text-left">{{ $t('End at') }}</fig-th>
-                        <fig-th class="text-left">{{ $t('Notes') }}</fig-th>
-                        <fig-th class="text-left">{{ $t('Menu') }}</fig-th>
-                        <fig-th class="text-right">{{ $t('Max per order') }}</fig-th>
-                        <fig-th sort="inventory_count" class="text-right">{{ $t('Dough count') }}</fig-th>
-                        <fig-th>{{ $t('Actions') }}</fig-th>
-                    </fig-tr>
-                </template>
+    <SearchFilterLayout :loading="$apiSearch.isLoading.value">
+        <template #filters>
+            <FilterGrid>
+                <!-- ends after -->
+                <div class="grid gap-1.5">
+                    <Label>{{ t('Ends after') }}</Label>
 
-                <fig-tr v-for="(obj, idx) in tableResults" :key="idx">
+                    <DateTimePicker v-model="filters.endsAfter" />
+                </div>
+            </FilterGrid>
+
+            <div class="mt-5">
+                <Button @click="fetchData">
+                    {{ t('Apply filters') }}
+                </Button>
+            </div>
+        </template>
+
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <SortableTableHead
+                        sort-key="start_at"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('Start at') }}</SortableTableHead>
+                    <SortableTableHead
+                        sort-key="end_at"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        @sort="onTableSort">{{ t('End at') }}</SortableTableHead>
+                    <TableHead>{{ t('Notes') }}</TableHead>
+                    <TableHead>{{ t('Menu') }}</TableHead>
+                    <TableHead class="text-right">{{ t('Max per order') }}</TableHead>
+                    <SortableTableHead
+                        sort-key="inventory_count"
+                        :active-sort-key="activeSort.by"
+                        :sort-desc="activeSort.isDesc"
+                        class="text-right"
+                        @sort="onTableSort">{{ t('Dough count') }}</SortableTableHead>
+                    <TableHead>{{ t('Actions') }}</TableHead>
+                </TableRow>
+            </TableHeader>
+
+            <TableBody>
+                <TableRow v-for="(obj, idx) in tableResults" :key="idx">
                     <!-- start_at -->
-                    <fig-td>
-                        <fig-format8601 :date="obj.start_at" />
-                    </fig-td>
+                    <TableCell>
+                        <div class="flex items-center gap-2">
+                            <Format8601 :date="obj.start_at" />
+                            <Badge v-if="obj.id === nextUpcomingId" variant="success" data-test="next-upcoming">{{ t('Next') }}</Badge>
+                        </div>
+                    </TableCell>
 
                     <!-- end_at -->
-                    <fig-td>
-                        <fig-format8601 :date="obj.end_at" />
-                    </fig-td>
+                    <TableCell>
+                        <Format8601 :date="obj.end_at" />
+                    </TableCell>
 
                     <!-- notes -->
-                    <fig-td>
+                    <TableCell>
                         {{ obj.notes }}
-                    </fig-td>
+                        <div v-if="obj.last_notified_at" class="text-sm text-muted-foreground" data-test="last-notified">
+                            {{ t('Notified') }} <Format8601 :date="obj.last_notified_at" />
+                        </div>
+                    </TableCell>
 
                     <!-- menu -->
-                    <fig-td>
+                    <TableCell>
                         {{ menus[obj.service_menu_id]?.title || '' }}
                         <div v-if="menuProblem(obj.service_menu_id)" class="text-sm text-amber-700" data-test="menu-problem">
                             {{ menuProblem(obj.service_menu_id) }}
                         </div>
-                    </fig-td>
+                    </TableCell>
 
                     <!-- max_per_order -->
-                    <fig-td class="text-right">
-                        {{ obj.max_per_order }}
-                    </fig-td>
+                    <TableCell class="text-right">{{ obj.max_per_order }}</TableCell>
 
                     <!-- dough_count -->
-                    <fig-td class="text-right">
-                        {{ obj.inventory_count }}
-                    </fig-td>
+                    <TableCell class="text-right">{{ obj.inventory_count }}</TableCell>
 
                     <!-- actions -->
-                    <fig-td>
-                        <div class="flex items-center justify-center w-full gap-4">
-                            <fig-button
-                                variant="plain"
-                                iconOnly
-                                icon="edit"
-                                @click="upsertModal.show(obj.id)" />
+                    <TableCell>
+                        <div class="flex items-center justify-center w-full gap-2">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                @click="upsertModal.show(obj.id)">
+                                <PencilIcon />
+                            </Button>
 
-                            <fig-pop-confirm
-                                @confirm="onDeleteItem(obj.id)">
+                            <PopConfirm v-if="!serviceHasEnded(obj.end_at)" @confirm="onNotify(obj.id)">
                                 <template v-slot:reference>
-                                    <fig-button
-                                        variant="danger"
-                                        iconOnly
-                                        icon="trash" />
+                                    <!-- Disabled while a send is in flight (found by QA review:
+                                    unlike Delete, a duplicate notify isn't idempotent — it
+                                    really does double-email every subscriber). -->
+                                    <Button variant="ghost" size="icon" data-test="notify-subscribers" :disabled="$apiNotify.isLoading.value">
+                                        <MailIcon />
+                                    </Button>
                                 </template>
-                                {{ $t('Delete this item?') }}
-                            </fig-pop-confirm>
+                                {{ obj.last_notified_at ? t('Notify subscribers again about this opening?') : t('Notify subscribers about this opening?') }}
+                            </PopConfirm>
+
+                            <PopConfirm @confirm="onDeleteItem(obj.id)">
+                                <template v-slot:reference>
+                                    <Button variant="destructive" size="icon">
+                                        <Trash2Icon />
+                                    </Button>
+                                </template>
+                                {{ t('Delete this item?') }}
+                            </PopConfirm>
                         </div>
-                    </fig-td>
-                </fig-tr>
+                    </TableCell>
+                </TableRow>
 
-                <fig-tr-no-results v-if="tableHasNoResults" :colspan="8" />
-            </fig-table-simple>
-        </fig-pagination-wrapper>
-    </fig-overlay>
+                <TableRow v-if="tableHasNoResults">
+                    <TableCell colspan="7" class="text-center text-muted-foreground">{{ t('No data') }}</TableCell>
+                </TableRow>
+            </TableBody>
+        </Table>
 
-    <service-upsert-modal
+        <DataPagination
+            v-model:page-size="pageSize"
+            v-model:page-number="pageNumber"
+            :total-rows="tableTotalResultsCount" />
+    </SearchFilterLayout>
+
+    <ServiceUpsertModal
         ref="upsertModal"
         @success="fetchData" />
 </template>

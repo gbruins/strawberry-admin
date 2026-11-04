@@ -8,15 +8,14 @@ export default {
 import { ref, reactive, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/app.js';
-import FigFormInputText from '@/components/figleaf/form/text/FormText.vue';
-import FigFormCheckbox from '@/components/figleaf/form/checkbox/FormCheckbox.vue';
-import FigLabelValueGroup from '@/components/figleaf/labelValueGroup/LabelValueGroup.vue';
-import FigLabelValue from '@/components/figleaf/labelValueGroup/LabelValue.vue';
-import FigButton from '@/components/figleaf/button/Button.vue';
-import FigModal from '@/components/figleaf/modal/Modal.vue';
-import FigOverlay from '@/components/figleaf/overlay/Overlay.vue';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import Overlay from '@/components/Overlay.vue';
 import useApi from '@/composables/useApi';
-import useToast from '@/components/figleaf/toast/useToast';
+import useToast from '@/composables/useToast';
 
 const emit = defineEmits([
     'success'
@@ -26,11 +25,10 @@ const { t } = useI18n();
 const $apiCreate = useApi('allowedStreet.create');
 const $apiUpdate = useApi('allowedStreet.update');
 const $apiRead = useApi('allowedStreet.read');
-const $apiSearch = useApi('allowedStreet.search');
 const { successToast } = useToast();
 const appStore = useAppStore();
 
-const upsertModal = ref(null);
+const open = ref(false);
 const updateId: Ref<string | null> = ref(null);
 
 const form = reactive({
@@ -73,7 +71,7 @@ function onSubmit() {
 }
 
 function hide() {
-    upsertModal.value.hide();
+    open.value = false;
 }
 
 function resetData() {
@@ -90,7 +88,7 @@ function show(id) {
         getById(id);
     }
 
-    upsertModal.value.show();
+    open.value = true;
 }
 
 defineExpose({
@@ -99,42 +97,33 @@ defineExpose({
 </script>
 
 <template>
-    <fig-modal
-        size="lg"
-        ref="upsertModal">
-        <template v-slot:header>
-            {{ updateId ? $t('Update allowed street') : $t('Create allowed street') }}
-        </template>
+    <Dialog v-model:open="open">
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{{ updateId ? t('Update allowed street') : t('Create allowed street') }}</DialogTitle>
+                <DialogDescription class="sr-only">{{ updateId ? t('Update allowed street') : t('Create allowed street') }}</DialogDescription>
+            </DialogHeader>
 
-        <fig-overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
-            <fig-label-value-group display="block" density="md">
-                <!-- street name -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Street name') }}</template>
-                    <fig-form-input-text
-                        v-model="form.street_name" />
-                </fig-label-value>
+            <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- street name -->
+                    <div class="grid gap-1.5">
+                        <Label for="allowed-street-name">{{ t('Street name') }}</Label>
+                        <Input id="allowed-street-name" v-model="form.street_name" />
+                    </div>
 
-                <!-- active -->
-                <fig-label-value>
-                    <template v-slot:label>{{ $t('Active') }}</template>
-                    <fig-form-checkbox
-                        v-model="form.active"
-                        binary />
-                </fig-label-value>
-            </fig-label-value-group>
-        </fig-overlay>
+                    <!-- active -->
+                    <div class="flex items-center gap-2">
+                        <Checkbox id="allowed-street-active" v-model="form.active" />
+                        <Label for="allowed-street-active">{{ t('Active') }}</Label>
+                    </div>
+                </div>
+            </Overlay>
 
-        <template v-slot:footer>
-            <div class="flex items-center gap-4 w-full justify-center">
-                <fig-button
-                    variant="primary"
-                    @click="onSubmit">{{ $t('Submit') }}</fig-button>
-
-                <fig-button
-                    variant="plain"
-                    @click="hide">{{ $t('Cancel') }}</fig-button>
-            </div>
-        </template>
-    </fig-modal>
+            <DialogFooter class="sm:justify-center">
+                <Button @click="onSubmit">{{ t('Submit') }}</Button>
+                <Button variant="ghost" @click="hide">{{ t('Cancel') }}</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>

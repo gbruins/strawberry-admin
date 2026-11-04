@@ -1,11 +1,9 @@
+// Login/logout/password-reset are no longer server routes — call supabase.auth.* directly
+// (src/plugins/supabase.js) against Supabase Auth instead (contracts/admin-auth.md "Removed").
 export default (utils) => {
     return {
-        login: (data, config) => {
-            return utils.$post('auth/login', data, config);
-        },
-
-        logout: (data, config) => {
-            return utils.$post('auth/logout', null, config);
+        me: (config) => {
+            return utils.$get('admin/me', null, config);
         },
     }
 }
