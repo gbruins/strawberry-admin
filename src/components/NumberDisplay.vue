@@ -1,104 +1,40 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import useNumeric from '@/composables/useNumeric.js';
+import { round } from '@/utils/number';
 
-const props = defineProps({
-    value: {
-        type: [Number, String],
-    },
-
-    localize: {
-        type: Boolean,
-        default: true
-    },
-
-    as: {
-        type: String,
-        default: 'span'
-    },
-
-    emptyDisplay: {
-        type: String,
-        default: ''
-    },
-
-    round: {
-        type: Number,
-    },
-
-    /*
-     The formats as defined in the i18n module.
-     This is the second argument of the $n() function (ex: currency, decimal, percent, etc.)
-     https://vue-i18n.intlify.dev/guide/essentials/number.html#basic-usage
-    */
-    format: {
-        type: String,
-        default: 'decimal'
-    },
-
-    config: {
-        type: Object,
-        default: () => {
-            return {};
-        }
-    },
-
-    removeAnchorIfZero: {
-        type: Boolean,
-        default: true
-    }
+const props = withDefaults(defineProps<{
+    value?: number | string | null;
+    /** A numberFormats key from plugins/i18n (decimal, currency, percent). */
+    format?: string;
+    /** Intl.NumberFormat overrides. */
+    config?: Intl.NumberFormatOptions;
+    /** Round to this many decimals before formatting. */
+    decimals?: number;
+    emptyDisplay?: string;
+}>(), {
+    format: 'decimal',
+    config: () => ({}),
+    emptyDisplay: ''
 });
 
 const { n } = useI18n();
-const { round } = useNumeric();
 
-const cleanValue = computed(() => {
-    const clean = parseFloat(props.value);
-    return isNaN(clean) ? null : clean;
-});
-
-const elementType = computed(() => {
-    if (props.as === 'a' && props.removeAnchorIfZero && cleanValue.value === 0) {
-        return 'span';
-    }
-    return props.as;
-});
-
-const cleanAttrs = computed(() => {
-    const attrs = { ...props.$attrs };
-
-    if (elementType.value === 'span') {
-        delete attrs.href;
-    }
-
-    return attrs;
+const numericValue = computed(() => {
+    const parsed = typeof props.value === 'number' ? props.value : parseFloat(props.value ?? '');
+    return Number.isFinite(parsed) ? parsed : null;
 });
 
 const label = computed(() => {
-    if (cleanValue.value === null) {
+    if (numericValue.value === null) {
         return props.emptyDisplay;
     }
 
-    let displayedValue = cleanValue.value;
-
-    if (props.round) {
-        displayedValue = round(displayedValue, props.round);
-    }
-
-    if (props.localize) {
-        return n(displayedValue, props.format, props.config);
-    }
-
-    return displayedValue;
+    const value = props.decimals === undefined ? numericValue.value : round(numericValue.value, props.decimals);
+    return n(value, { key: props.format, ...props.config });
 });
 </script>
 
 <template>
-    <component
-        :is="elementType"
-        v-bind="cleanAttrs"
-        :class="{'text-muted-foreground': !cleanValue}">
-        {{ label }}
-    </component>
+    <span :class="{ 'text-muted-foreground': !numericValue }">{{ label }}</span>
 </template>

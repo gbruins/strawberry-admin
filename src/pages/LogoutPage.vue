@@ -1,29 +1,17 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useAppStore } from '@/stores/app.js';
 import { useRouter } from 'vue-router';
-import { supabase } from '@/plugins/supabase';
+import { useAppStore } from '@/stores/app';
 
 const appStore = useAppStore();
 const router = useRouter();
 
-async function logout() {
-    try {
-        await supabase.auth.signOut();
-    }
-    catch (error) {
-        console.error('Failed to sign out of Supabase', error);
-    }
-    finally {
-        appStore.clearSession();
-        router.push({ name: 'login' });
-    }
-}
-
-onMounted(() => {
-    logout();
+onMounted(async () => {
+    await appStore.logout();
+    router.push({ name: 'login' });
 });
 </script>
 
 <template>
+    <span class="sr-only">Signing out…</span>
 </template>

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -19,41 +19,29 @@ import {
     SelectValue
 } from '@/components/ui/select';
 
-const props = defineProps({
-    totalRows: {
-        type: Number,
-        default: 0
-    },
-
-    perPageOptions: {
-        type: Array,
-        default: () => [25, 50, 100, 200]
-    }
+const props = withDefaults(defineProps<{
+    totalRows?: number;
+    perPageOptions?: number[];
+}>(), {
+    totalRows: 0,
+    perPageOptions: () => [25, 50, 100, 200]
 });
 
-const pageSize = defineModel('pageSize', { default: 100 });
-const pageNumber = defineModel('pageNumber', { default: 1 });
+const pageSize = defineModel<number>('pageSize', { default: 100 });
+const pageNumber = defineModel<number>('pageNumber', { default: 1 });
 
 const { t } = useI18n();
 
 const displayingText = computed(() => {
     const start = (pageNumber.value - 1) * pageSize.value + 1;
-    let end = pageNumber.value * pageSize.value;
-
-    if (props.totalRows < end) {
-        end = props.totalRows;
-    }
-
+    const end = Math.min(pageNumber.value * pageSize.value, props.totalRows);
     return t('Displaying {start} - {end}', { start, end });
 });
 
-const totalText = computed(() => {
-    const total = props.totalRows || 0;
-    return t('{num} result | {num} results', { num: total }, total);
-});
+const totalText = computed(() => t('{num} result | {num} results', { num: props.totalRows }, props.totalRows));
 
-function onPageSizeChange(val) {
-    pageSize.value = parseInt(val, 10);
+function onPageSizeChange(value: unknown) {
+    pageSize.value = parseInt(String(value), 10);
     pageNumber.value = 1;
 }
 </script>

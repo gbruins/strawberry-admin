@@ -1,38 +1,21 @@
-<script setup>
-import { ref, onMounted } from 'vue';
-import useStripeTaxCodes from '@/composables/useStripeTaxCodes.js';
+<script setup lang="ts">
+import { computed } from 'vue';
 import SearchableSelect from '@/components/SearchableSelect.vue';
+import { STRIPE_TAX_CODES, getStripeTaxCodeDescription } from '@/constants/stripeTaxCodes';
 
-const { getWhiteList, getDescriptionForTaxCode } = useStripeTaxCodes();
-const whiteList = getWhiteList();
+// Pure v-model control. (It used to force the first code into the model on mount, which could
+// clobber a product's saved code depending on load timing — the default now lives in the form's
+// defaults instead.)
 
-const modelValue = defineModel();
-const selectedDescription = ref(null);
+const modelValue = defineModel<string | null>();
 
-const selectOptions = whiteList.map(item => ({
-    label: item.name,
-    value: item.id
-}));
-
-function setDescription(value) {
-    selectedDescription.value = getDescriptionForTaxCode(value);
-}
-
-onMounted(() => {
-    const first = whiteList[0].id;
-    modelValue.value = first;
-    setDescription(first);
-});
+const options = STRIPE_TAX_CODES.map((code) => ({ label: code.name, value: code.id }));
+const description = computed(() => getStripeTaxCodeDescription(modelValue.value));
 </script>
-
 
 <template>
     <div>
-        <SearchableSelect
-            v-model="modelValue"
-            :options="selectOptions"
-            @update:modelValue="setDescription" />
-
-        <div class="text-sm text-muted-foreground px-2 mt-1" v-if="selectedDescription">{{ selectedDescription }}</div>
+        <SearchableSelect v-model="modelValue" :options="options" />
+        <div v-if="description" class="text-sm text-muted-foreground px-2 mt-1">{{ description }}</div>
     </div>
 </template>

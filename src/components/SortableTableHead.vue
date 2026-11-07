@@ -1,55 +1,49 @@
-<script setup>
-import { computed } from 'vue';
+<script setup lang="ts">
+import { computed, inject } from 'vue';
 import { ChevronUpIcon, ChevronDownIcon, ChevronsUpDownIcon } from '@lucide/vue';
 import { TableHead } from '@/components/ui/table';
+import { SORT_CONTEXT } from '@/composables/useListPage';
 
-const props = defineProps({
-    sortKey: {
-        type: String,
-        default: null
-    },
+// Reads and sets the sort through the context <ListTable> provides; outside a ListTable it
+// renders as a plain header.
 
-    activeSortKey: {
-        type: String,
-        default: null
-    },
+const props = defineProps<{
+    sortKey: string;
+}>();
 
-    sortDesc: {
-        type: Boolean,
-        default: false
+const context = inject(SORT_CONTEXT, null);
+
+const isActive = computed(() => context?.sort.value.by === props.sortKey);
+const isDesc = computed(() => isActive.value && !!context?.sort.value.desc);
+
+const ariaSort = computed(() => {
+    if (!isActive.value) {
+        return 'none';
     }
+
+    return isDesc.value ? 'descending' : 'ascending';
 });
-
-const emit = defineEmits(['sort']);
-
-const isActive = computed(() => Boolean(props.sortKey) && props.activeSortKey === props.sortKey);
 
 const icon = computed(() => {
     if (!isActive.value) {
         return ChevronsUpDownIcon;
     }
-    return props.sortDesc ? ChevronDownIcon : ChevronUpIcon;
+
+    return isDesc.value ? ChevronDownIcon : ChevronUpIcon;
 });
-
-function onClick() {
-    if (!props.sortKey) {
-        return;
-    }
-
-    emit('sort', {
-        by: props.sortKey,
-        isDesc: isActive.value ? !props.sortDesc : false
-    });
-}
 </script>
 
 <template>
-    <TableHead
-        :class="[sortKey ? 'cursor-pointer select-none' : '', isActive ? 'text-foreground' : '']"
-        @click="onClick">
-        <span class="inline-flex items-center gap-1">
+    <TableHead :aria-sort="context ? ariaSort : undefined" :class="{ 'text-foreground': isActive }">
+        <button
+            v-if="context"
+            type="button"
+            class="inline-flex items-center gap-1 select-none cursor-pointer hover:text-foreground"
+            @click="context.setSort(sortKey)">
             <slot />
-            <component :is="icon" v-if="sortKey" class="size-3.5 text-muted-foreground" />
-        </span>
+            <component :is="icon" class="size-3.5 text-muted-foreground" />
+        </button>
+
+        <slot v-else />
     </TableHead>
 </template>

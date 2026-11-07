@@ -12,7 +12,7 @@ function loadPersisted() {
         const raw = localStorage.getItem(STORAGE_KEY);
         return raw ? JSON.parse(raw) : null;
     }
-    catch (error) {
+    catch {
         return null;
     }
 }

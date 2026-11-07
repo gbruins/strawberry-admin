@@ -1,23 +1,14 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
-import { useAppStore } from '@/stores/app.js';
 import SearchableSelect from '@/components/SearchableSelect.vue';
+import { useAllowedStreets } from '@/composables/useLookups';
 
-const modelValue = defineModel();
+const modelValue = defineModel<string | null>();
+const { items } = useAllowedStreets();
 
-const appStore = useAppStore();
-
-const allowedStreetsOptions = computed(() => {
-    return appStore.allowedStreets.map(street => ({
-        label: street.street_name,
-        value: street.id
-    }));
-});
+const options = computed(() => items.value.map((street) => ({ label: street.street_name, value: street.id })));
 </script>
 
 <template>
-    <SearchableSelect
-        v-bind="$attrs"
-        v-model="modelValue"
-        :options="allowedStreetsOptions" />
+    <SearchableSelect v-bind="$attrs" v-model="modelValue" :options="options" />
 </template>

@@ -1,28 +1,15 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import {
-    LayoutDashboardIcon,
-    ShoppingCartIcon,
-    ClockIcon,
-    BookOpenIcon,
-    PizzaIcon,
-    TagIcon,
-    MapPinIcon,
-    BadgePercentIcon,
-    MailIcon,
-    LogOutIcon,
-    ChevronsUpDownIcon,
-    StoreIcon,
-    ChefHatIcon
-} from '@lucide/vue';
+import { LogOutIcon, ChevronsUpDownIcon, PizzaIcon } from '@lucide/vue';
 import {
     SidebarProvider,
     Sidebar,
     SidebarHeader,
     SidebarContent,
     SidebarGroup,
+    SidebarGroupLabel,
     SidebarGroupContent,
     SidebarMenu,
     SidebarMenuItem,
@@ -38,59 +25,32 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { useAppStore } from '@/stores/app.js';
-import { supabase } from '@/plugins/supabase';
-import useBroadcastChannels from '@/composables/useBroadcastChannels';
+import { useAppStore } from '@/stores/app';
+import { NAV_GROUPS } from '@/config/navigation';
+import { getLogoutChannel, type LogoutMessage } from '@/utils/broadcast';
 
 const { t } = useI18n();
 const appStore = useAppStore();
 const router = useRouter();
 const route = useRoute();
-const { getLogoutChannel } = useBroadcastChannels();
 
-const navItems = [
-    { name: 'dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
-    { name: 'carts', label: 'Carts', icon: ShoppingCartIcon },
-    { name: 'services', label: 'Service', icon: ClockIcon },
-    { name: 'menus', label: 'Menus', icon: BookOpenIcon },
-    { name: 'products', label: 'Products', icon: PizzaIcon },
-    { name: 'product_types', label: 'Product types', icon: TagIcon },
-    { name: 'allowed_streets', label: 'Allowed streets', icon: MapPinIcon },
-    { name: 'address_discounts', label: 'Address discounts', icon: BadgePercentIcon },
-    { name: 'subscribers', label: 'Subscribers', icon: MailIcon },
-    { name: 'kitchen_stations', label: 'Kitchen stations', icon: ChefHatIcon },
-    { name: 'tenant_address', label: 'Store address', icon: StoreIcon }
-];
-
-function onLogout() {
-    appStore.clearSession();
+async function logout() {
+    await appStore.logout();
     router.push({ name: 'login' });
 }
 
-async function logout() {
-    try {
-        await supabase.auth.signOut();
-    }
-    catch (error) {
-        console.error('Failed to sign out of Supabase', error);
-    }
-    finally {
-        onLogout();
-    }
-}
-
-// Closed on unmount — an open BroadcastChannel keeps its onmessage handler alive even after
-// this component unmounts, so without this a transient mount (e.g. the brief pre-navigation
-// paint before the router's initial route resolves) would leave a listener that fires forever
-// for the rest of the tab's life, including on routes that never mount this layout again.
-let logoutChannel = null;
+// Another tab (or this tab's own 401 handler, see plugins/api.js) logged out. Closed on unmount
+// — an open BroadcastChannel keeps its handler alive after the component is gone, so a transient
+// mount would otherwise leave a listener firing for the rest of the tab's life.
+let logoutChannel: BroadcastChannel | null = null;
 
 onMounted(() => {
     logoutChannel = getLogoutChannel();
 
-    logoutChannel.onmessage = (event) => {
+    logoutChannel.onmessage = (event: MessageEvent<LogoutMessage>) => {
         if (event.data?.type === 'logout') {
-            onLogout();
+            appStore.clearSession();
+            router.push({ name: 'login' });
         }
     };
 });
@@ -108,9 +68,9 @@ onUnmounted(() => {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" as-child>
-                            <RouterLink :to="{ name: 'products' }">
+                            <RouterLink :to="{ name: 'dashboard' }" class="no-underline">
                                 <PizzaIcon class="size-5" />
-                                <span class="font-semibold">Strawberry Pizza</span>
+                                <span class="font-semibold truncate">{{ appStore.tenantName || t('Admin') }}</span>
                             </RouterLink>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -118,15 +78,17 @@ onUnmounted(() => {
             </SidebarHeader>
 
             <SidebarContent>
-                <SidebarGroup>
+                <SidebarGroup v-for="(group, idx) in NAV_GROUPS" :key="group.label ?? idx">
+                    <SidebarGroupLabel v-if="group.label">{{ t(group.label) }}</SidebarGroupLabel>
+
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            <SidebarMenuItem v-for="item in navItems" :key="item.name">
+                            <SidebarMenuItem v-for="item in group.items" :key="item.name">
                                 <SidebarMenuButton
                                     as-child
                                     :is-active="route.name === item.name"
                                     :tooltip="t(item.label)">
-                                    <RouterLink :to="{ name: item.name }">
+                                    <RouterLink :to="{ name: item.name }" class="no-underline">
                                         <component :is="item.icon" />
                                         <span>{{ t(item.label) }}</span>
                                     </RouterLink>
@@ -169,10 +131,3 @@ onUnmounted(() => {
         </SidebarInset>
     </SidebarProvider>
 </template>
-
-<style>
-.group\/menu-item a {
-    text-decoration: none;
-    color: var(--color-gray-600)
-}
-</style>

@@ -1,124 +1,95 @@
-<script>
-export default {
-    name: 'CartDetailNotesCard'
-}
-</script>
-
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import useApi from '@/composables/useApi.js';
 import { SaveIcon, PlusIcon, Trash2Icon, StickyNoteIcon } from '@lucide/vue';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import SectionCard from '@/components/SectionCard.vue';
 import Overlay from '@/components/Overlay.vue';
 import PopConfirm from '@/components/PopConfirm.vue';
 import Format8601 from '@/components/Format8601.vue';
+import useApi from '@/composables/useApi';
 import useToast from '@/composables/useToast';
+import type { AdminOrderNote, Cart } from '@/types/cart';
 
-const props = defineProps({
-    cart: {
-        type: Object
-    }
-});
+const props = defineProps<{ cart: Cart }>();
 
 const $apiUpdate = useApi('cart.notes.update');
 const { t } = useI18n();
 const { successToast } = useToast();
 
-const cartNotes = ref([]);
+// A local working copy with a stable key per row. It used to alias the prop's own array, so
+// edits changed the parent's data before Save, and rows were keyed by index, so deleting one
+// could shift typed text into the wrong textarea.
+type DraftNote = { created_at: string, note: string, key: number };
 
-async function onSaveNotes() {
-    return $apiUpdate.tryCatch(
-        async () => {
-            await $apiUpdate.run(props.cart.id, cartNotes.value);
+let nextKey = 0;
+const notes = ref<DraftNote[]>([]);
 
-            successToast({
-                title: t('Success'),
-                text: t('Notes updated successfully')
-            });
-        }
-    );
-}
+watch(
+    () => props.cart.admin_order_notes,
+    (saved) => {
+        notes.value = (Array.isArray(saved) ? saved : []).map(({ created_at, note }) => ({ created_at, note: note ?? '', key: nextKey++ }));
+    },
+    { immediate: true }
+);
 
 function onAddNote() {
-    cartNotes.value.push({
-        created_at: new Date().toISOString(),
-        note: null
-    })
+    notes.value.push({ created_at: new Date().toISOString(), note: '', key: nextKey++ });
 }
 
-function onRemoveNote(index) {
-    cartNotes.value.splice(index, 1);
+function onRemoveNote(index: number) {
+    notes.value.splice(index, 1);
 }
 
-// TODO: add deep config?
-watch(
-    () => props.cart?.admin_order_notes,
-    (val) => {
-        cartNotes.value = Array.isArray(val) ? val : []
-    }
-);
+function onSaveNotes() {
+    return $apiUpdate.tryCatch(async () => {
+        const payload: AdminOrderNote[] = notes.value.map(({ created_at, note }) => ({ created_at, note: note || null }));
+        await $apiUpdate.run(props.cart.id, payload);
+        successToast({ title: t('Success'), text: t('Notes updated successfully') });
+    });
+}
 </script>
 
 <template>
-    <Card>
-        <CardHeader class="border-b">
-            <CardTitle class="flex items-center gap-2 text-lg font-bold">
-                <StickyNoteIcon class="size-6" />
-                {{ t('Notes') }}
-            </CardTitle>
-        </CardHeader>
+    <SectionCard :title="t('Notes')" :icon="StickyNoteIcon">
+        <div v-if="cart.customer_note" class="mb-4" data-test="customer-note">
+            <div class="text-sm font-bold">{{ t('Customer note') }}</div>
+            <p class="whitespace-pre-wrap break-words">{{ cart.customer_note }}</p>
+        </div>
 
-        <CardContent>
-            <div class="w-full">
-                <div v-if="cart?.customer_note" class="mb-4" data-test="customer-note">
-                    <div class="text-sm font-bold">{{ t('Customer note') }}</div>
-                    <p class="whitespace-pre-wrap break-words">{{ cart.customer_note }}</p>
-                </div>
-
-                <Overlay :show="$apiUpdate.isLoading.value">
-                    <div class="flex flex-col gap-2 w-full">
-                        <div
-                            v-for="(row, index) in cartNotes"
-                            :key="index"
-                            class="flex gap-2 w-full items-start">
-                            <div class="whitespace-nowrap pt-2 text-sm text-muted-foreground">
-                                <Format8601 :date="row.created_at" />
-                            </div>
-
-                            <Textarea v-model="row.note" class="flex-grow" rows="1" />
-
-                            <PopConfirm @confirm="onRemoveNote(index)">
-                                <template v-slot:reference>
-                                    <Button variant="ghost" size="icon" class="shrink-0">
-                                        <Trash2Icon />
-                                    </Button>
-                                </template>
-                                {{ t('Delete this row?') }}
-                            </PopConfirm>
-                        </div>
+        <Overlay :show="$apiUpdate.isLoading.value">
+            <div class="flex flex-col gap-2 w-full">
+                <div v-for="(row, index) in notes" :key="row.key" class="flex gap-2 w-full items-start">
+                    <div class="whitespace-nowrap pt-2 text-sm text-muted-foreground">
+                        <Format8601 :date="row.created_at" />
                     </div>
 
-                    <div class="flex items-center pt-2" :class="{ 'pt-2': cartNotes.length }">
-                        <Button variant="outline" size="sm" class="mr-3" @click="onAddNote">
-                            <PlusIcon />
-                            {{ t('Add note') }}
-                        </Button>
+                    <Textarea v-model="row.note" class="flex-grow" rows="1" :aria-label="t('Note')" />
 
-                        <div class="flex-grow">
-                            <Button
-                                v-if="cartNotes.length"
-                                size="sm"
-                                @click="onSaveNotes">
-                                <SaveIcon />
-                                {{ t('Save notes') }}
+                    <PopConfirm @confirm="onRemoveNote(index)">
+                        <template #reference>
+                            <Button variant="ghost" size="icon" class="shrink-0" :aria-label="t('Delete note')">
+                                <Trash2Icon />
                             </Button>
-                        </div>
-                    </div>
-                </Overlay>
+                        </template>
+                        {{ t('Delete this row?') }}
+                    </PopConfirm>
+                </div>
             </div>
-        </CardContent>
-    </Card>
+
+            <div class="flex items-center gap-3 pt-2">
+                <Button variant="outline" size="sm" @click="onAddNote">
+                    <PlusIcon />
+                    {{ t('Add note') }}
+                </Button>
+
+                <!-- Also shown once every note is removed, so the removal can be saved. -->
+                <Button size="sm" :disabled="$apiUpdate.isLoading.value" @click="onSaveNotes">
+                    <SaveIcon />
+                    {{ t('Save notes') }}
+                </Button>
+            </div>
+        </Overlay>
+    </SectionCard>
 </template>

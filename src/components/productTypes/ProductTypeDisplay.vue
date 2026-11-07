@@ -1,28 +1,16 @@
-<script>
-export default {
-    name: 'ProductTypeDisplay'
-}
-</script>
-
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
-import { useAppStore } from '@/stores/app.js';
+import { useProductTypes } from '@/composables/useLookups';
 
-const appStore = useAppStore();
+const props = defineProps<{
+    /** The product type's numeric `value` (what products store), not its row id. */
+    value?: number | null;
+}>();
 
-const props = defineProps({
-    value: {
-        type: Number,
-        required: true
-    }
-});
-
-const productTypeName = computed(() => {
-    const productType = appStore.productTypes.find(pt => pt.value === props.value);
-    return productType ? productType.name : '';
-});
+const { byId } = useProductTypes();
+const name = computed(() => byId.value.get(props.value)?.name ?? '');
 </script>
 
 <template>
-    <span>{{ productTypeName }}</span>
+    <span>{{ name }}</span>
 </template>
