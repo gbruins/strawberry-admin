@@ -1,86 +1,50 @@
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
-import { supabase } from '@/plugins/supabase';
-import useExceptionToast from '@/composables/useExceptionToast';
-import useToast from '@/composables/useToast.js';
+import { useAppStore } from '@/stores/app';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import AuthCard from '@/components/AuthCard.vue';
+import FormField from '@/components/FormField.vue';
+import useAsyncAction from '@/composables/useAsyncAction';
+import useToast from '@/composables/useToast';
 
 const { t } = useI18n();
-const { showExceptionToast } = useExceptionToast();
 const { successToast } = useToast();
+const appStore = useAppStore();
 
-const form = reactive({ email: '' });
-const isLoading = ref(false);
+const email = ref('');
 const sent = ref(false);
+const canSubmit = computed(() => email.value.trim().length > 0);
 
-const buttonIsEnabled = computed(() => form.email?.trim().length > 0);
-
-async function onSubmit() {
-    isLoading.value = true;
-
-    try {
-        const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
-            redirectTo: `${window.location.origin}/reset-password`
-        });
-
-        if (error) {
-            throw error;
-        }
-
-        sent.value = true;
-        successToast({ title: t('Check your email'), text: t('If an account exists for that email, a reset link is on its way.') });
-    }
-    catch (error) {
-        console.error(error);
-        showExceptionToast(error);
-    }
-    finally {
-        isLoading.value = false;
-    }
-}
+const sendLink = useAsyncAction(async () => {
+    await appStore.requestPasswordReset(email.value);
+    sent.value = true;
+    successToast({ title: t('Check your email'), text: t('If an account exists for that email, a reset link is on its way.') });
+});
 </script>
 
 <template>
-    <div class="w-full max-w-96">
-        <Card>
-            <CardHeader>
-                <CardTitle class="text-center text-xl">{{ t('Forgot password') }}</CardTitle>
-            </CardHeader>
+    <AuthCard :title="t('Forgot password')">
+        <form v-if="!sent" class="grid grid-cols-1 gap-4" @submit.prevent="sendLink.run()">
+            <FormField :label="t('Email')" for="forgot-email">
+                <Input id="forgot-email" v-model="email" type="email" autocomplete="email" />
+            </FormField>
 
-            <CardContent>
-                <form v-if="!sent" class="grid grid-cols-1 gap-4" @submit.prevent="onSubmit">
-                    <div class="grid gap-1.5">
-                        <Label for="forgot-email">{{ t('Email') }}</Label>
-                        <Input
-                            id="forgot-email"
-                            v-model="form.email"
-                            type="email"
-                            autocomplete="email" />
-                    </div>
+            <Button type="submit" class="w-full" :disabled="!canSubmit || sendLink.isLoading.value">
+                {{ t('Send reset link') }}
+            </Button>
 
-                    <Button
-                        type="submit"
-                        class="w-full"
-                        :disabled="!buttonIsEnabled || isLoading">
-                        {{ t('Send reset link') }}
-                    </Button>
+            <RouterLink
+                :to="{ name: 'login' }"
+                class="text-sm text-center text-muted-foreground hover:underline">
+                {{ t('Back to login') }}
+            </RouterLink>
+        </form>
 
-                    <RouterLink
-                        :to="{ name: 'login' }"
-                        class="text-sm text-center text-muted-foreground hover:underline">
-                        {{ t('Back to login') }}
-                    </RouterLink>
-                </form>
-
-                <p v-else class="text-sm text-center text-muted-foreground">
-                    {{ t('If an account exists for that email, a reset link is on its way.') }}
-                </p>
-            </CardContent>
-        </Card>
-    </div>
+        <p v-else class="text-sm text-center text-muted-foreground">
+            {{ t('If an account exists for that email, a reset link is on its way.') }}
+        </p>
+    </AuthCard>
 </template>

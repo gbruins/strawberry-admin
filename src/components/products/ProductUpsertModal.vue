@@ -1,181 +1,84 @@
 <script setup lang="ts">
-import { ref, reactive, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { required } from '@vuelidate/validators';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
-import Overlay from '@/components/Overlay.vue';
+import FormDialog from '@/components/FormDialog.vue';
+import FormField from '@/components/FormField.vue';
 import MoneyInput from '@/components/MoneyInput.vue';
 import ProductTypeSelect from '@/components/productTypes/ProductTypeSelect.vue';
 import StripeTaxCodeSelect from '@/components/products/StripeTaxCodeSelect.vue';
-import useApi from '@/composables/useApi';
-import useToast from '@/composables/useToast';
+import useUpsertForm from '@/composables/useUpsertForm';
+import { useProducts } from '@/composables/useLookups';
+import { DEFAULT_STRIPE_TAX_CODE } from '@/constants/stripeTaxCodes';
 
-const emit = defineEmits([
-    'success'
-]);
-
+const emit = defineEmits<{ success: [] }>();
 const { t } = useI18n();
-const $apiCreate = useApi('product.create');
-const $apiUpdate = useApi('product.update');
-const $apiRead = useApi('product.read');
-const { successToast } = useToast();
+const products = useProducts();
 
-const open = ref(false);
-const updateId: Ref<string | null> = ref(null);
-
-const form = reactive({
-    title: '',
-    description: '',
-    product_type: null,
-    base_price: 0,
-    stripe_price_id: null,
-    stripe_product_id: null,
-    stripe_tax_code: null,
-    published: true
-});
-
-function getById(id: string) {
-    return $apiRead.tryCatch(
-        async () => {
-            const response = await $apiRead.run(id);
-
-            form.title = response.data?.title || '';
-            form.description = response.data?.description || '';
-            form.product_type = response.data?.product_type || null;
-            form.base_price = response.data?.base_price || 0;
-            form.stripe_price_id = response.data?.stripe_price_id || null;
-            form.stripe_product_id = response.data?.stripe_product_id || null;
-            form.stripe_tax_code = response.data?.stripe_tax_code || null;
-            form.published = response.data?.published !== undefined ? response.data.published : true;
-
-            updateId.value = id;
-        }
-    );
-}
-
-function onSubmit() {
-    const api = updateId.value ? $apiUpdate : $apiCreate;
-    const formData = updateId.value ? { id: updateId.value, ...form } : { ...form };
-
-    return api.tryCatch(
-        async () => {
-            const data = { ...formData };
-            delete data.stripe_price_id;
-            delete data.stripe_product_id;
-
-            await api.run(data);
-
-            successToast({
-                title: t('Product saved successfully')
-            });
-
-            hide();
-            emit('success');
-        }
-    );
-}
-
-function hide() {
-    open.value = false;
-}
-
-function resetData() {
-    updateId.value = null;
-
-    form.title = '';
-    form.description = '';
-    form.product_type = null;
-    form.base_price = 0;
-    form.stripe_price_id = null;
-    form.stripe_product_id = null;
-    form.stripe_tax_code = null;
-    form.published = true;
-}
-
-function show(id) {
-    resetData();
-
-    if(id) {
-        getById(id);
+const upsert = useUpsertForm({
+    resource: 'product',
+    defaults: () => ({
+        title: '',
+        description: '',
+        product_type: null as number | null,
+        base_price: 0,
+        stripe_tax_code: DEFAULT_STRIPE_TAX_CODE as string | null,
+        published: true
+    }),
+    rules: () => ({ title: { required } }),
+    successMessage: () => t('Product saved successfully'),
+    onSaved: () => {
+        products.refresh();
+        emit('success');
     }
-
-    open.value = true;
-}
-
-defineExpose({
-    show
 });
+
+defineExpose({ show: upsert.show });
 </script>
 
 <template>
-    <Dialog v-model:open="open">
-        <DialogContent class="sm:max-w-2xl">
-            <DialogHeader>
-                <DialogTitle>{{ updateId ? t('Update product') : t('Create product') }}</DialogTitle>
-                <DialogDescription class="sr-only">{{ updateId ? t('Update product') : t('Create product') }}</DialogDescription>
-            </DialogHeader>
+    <FormDialog
+        v-model:open="upsert.open"
+        :title="upsert.isEdit ? t('Update product') : t('Create product')"
+        :busy="upsert.isBusy"
+        content-class="sm:max-w-2xl"
+        @submit="upsert.submit">
+        <div class="flex items-center gap-2">
+            <Checkbox id="product-published" v-model="upsert.form.published" />
+            <Label for="product-published">{{ t('Published') }}</Label>
+        </div>
 
-            <Overlay :show="$apiCreate.isLoading.value || $apiUpdate.isLoading.value || $apiRead.isLoading.value">
-                <div class="grid grid-cols-1 gap-4">
-                    <!-- published -->
-                    <div class="flex items-center gap-2">
-                        <Checkbox id="product-published" v-model="form.published" />
-                        <Label for="product-published">{{ t('Published') }}</Label>
-                    </div>
+        <FormField :label="t('Title')" for="product-title" :field="upsert.v$.title">
+            <Input id="product-title" v-model="upsert.form.title" />
+        </FormField>
 
-                    <!-- title -->
-                    <div class="grid gap-1.5">
-                        <Label for="product-title">{{ t('Title') }}</Label>
-                        <Input id="product-title" v-model="form.title" />
-                    </div>
+        <FormField :label="t('Description')" for="product-description">
+            <Input id="product-description" v-model="upsert.form.description" />
+        </FormField>
 
-                    <!-- description -->
-                    <div class="grid gap-1.5">
-                        <Label for="product-description">{{ t('Description') }}</Label>
-                        <Input id="product-description" v-model="form.description" />
-                    </div>
+        <FormField :label="t('Product type')">
+            <ProductTypeSelect v-model="upsert.form.product_type" clearable />
+        </FormField>
 
-                    <!-- product type -->
-                    <div class="grid gap-1.5">
-                        <Label>{{ t('Product type') }}</Label>
-                        <ProductTypeSelect v-model="form.product_type" clearable />
-                    </div>
+        <FormField :label="t('Price')">
+            <MoneyInput v-model="upsert.form.base_price" />
+        </FormField>
 
-                    <!-- base price -->
-                    <div class="grid gap-1.5">
-                        <Label>{{ t('Price') }}</Label>
-                        <MoneyInput v-model="form.base_price" />
-                    </div>
+        <FormField :label="t('Stripe Tax Code')">
+            <StripeTaxCodeSelect v-model="upsert.form.stripe_tax_code" />
+        </FormField>
 
-                    <!-- stripe tax code -->
-                    <div class="grid gap-1.5">
-                        <Label>{{ t('Stripe Tax Code') }}</Label>
-                        <StripeTaxCodeSelect v-model="form.stripe_tax_code" />
-                    </div>
+        <!-- Stripe ids are server-managed: shown for reference, never sent back -->
+        <template v-if="upsert.isEdit">
+            <FormField :label="t('Stripe Price ID')">
+                <div class="text-sm text-muted-foreground">{{ upsert.record?.stripe_price_id }}</div>
+            </FormField>
 
-                    <template v-if="updateId">
-                        <!-- stripe price id -->
-                        <div class="grid gap-1.5">
-                            <Label>{{ t('Stripe Price ID') }}</Label>
-                            <div class="text-sm text-muted-foreground">{{ form.stripe_price_id }}</div>
-                        </div>
-
-                        <!-- stripe product id -->
-                        <div class="grid gap-1.5">
-                            <Label>{{ t('Stripe Product ID') }}</Label>
-                            <div class="text-sm text-muted-foreground">{{ form.stripe_product_id }}</div>
-                        </div>
-                    </template>
-                </div>
-            </Overlay>
-
-            <DialogFooter class="sm:justify-center">
-                <Button @click="onSubmit">{{ t('Submit') }}</Button>
-                <Button variant="ghost" @click="hide">{{ t('Cancel') }}</Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
+            <FormField :label="t('Stripe Product ID')">
+                <div class="text-sm text-muted-foreground">{{ upsert.record?.stripe_product_id }}</div>
+            </FormField>
+        </template>
+    </FormDialog>
 </template>

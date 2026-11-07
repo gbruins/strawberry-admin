@@ -1,13 +1,15 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import FormField from '@/components/FormField.vue';
+import PinPad from '@/components/kitchen/PinPad.vue';
 import { useKitchenStationStore } from '@/stores/kitchenStation';
 import useApi from '@/composables/useApi';
-import PinPad from '@/components/kitchen/PinPad.vue';
+
+const MIN_PIN_LENGTH = 4;
 
 const { t } = useI18n();
 const router = useRouter();
@@ -18,10 +20,10 @@ const stationCode = ref('');
 const pin = ref('');
 const loginError = ref(false);
 
-const canSubmit = computed(() => stationCode.value.trim().length > 0 && pin.value.length >= 4);
+const canSubmit = computed(() => stationCode.value.trim().length > 0 && pin.value.length >= MIN_PIN_LENGTH);
 
 function onSubmit() {
-    if (!canSubmit.value) {
+    if (!canSubmit.value || $apiLogin.isLoading.value) {
         return;
     }
 
@@ -57,8 +59,7 @@ function onSubmit() {
             </CardHeader>
 
             <CardContent class="flex flex-col items-center gap-6">
-                <div class="grid gap-1.5 w-full">
-                    <Label for="kitchen-station-code">{{ t('Station code') }}</Label>
+                <FormField :label="t('Station code')" for="kitchen-station-code" class="w-full">
                     <Input
                         id="kitchen-station-code"
                         v-model="stationCode"
@@ -66,11 +67,11 @@ function onSubmit() {
                         maxlength="12"
                         autocapitalize="characters"
                         autocomplete="off" />
-                </div>
+                </FormField>
 
-                <div class="h-8 text-2xl font-mono tracking-widest">{{ '•'.repeat(pin.length) || ' ' }}</div>
+                <div class="h-8 text-2xl font-mono tracking-widest" aria-hidden="true">{{ '•'.repeat(pin.length) || ' ' }}</div>
 
-                <div v-if="loginError" class="text-destructive text-sm">{{ t('Invalid station code or PIN') }}</div>
+                <div v-if="loginError" class="text-destructive text-sm" role="alert">{{ t('Invalid station code or PIN') }}</div>
 
                 <PinPad v-model="pin" @submit="onSubmit">
                     <template #enter>{{ t('Log in') }}</template>

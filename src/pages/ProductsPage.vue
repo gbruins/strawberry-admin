@@ -1,182 +1,77 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import ListTable from '@/components/ListTable.vue';
 import SortableTableHead from '@/components/SortableTableHead.vue';
-import Overlay from '@/components/Overlay.vue';
-import DataPagination from '@/components/DataPagination.vue';
-import PopConfirm from '@/components/PopConfirm.vue';
+import RowActions from '@/components/RowActions.vue';
 import Money from '@/components/Money.vue';
 import BooleanBadge from '@/components/BooleanBadge.vue';
-import { PencilIcon, Trash2Icon } from '@lucide/vue';
 import ProductUpsertModal from '@/components/products/ProductUpsertModal.vue';
 import ProductTypeDisplay from '@/components/productTypes/ProductTypeDisplay.vue';
-import useApi from '@/composables/useApi';
-import useTable from '@/composables/useTable';
-import useToast from '@/composables/useToast';
+import useListPage from '@/composables/useListPage';
+import { useProducts } from '@/composables/useLookups';
 
-const $apiSearch = useApi('product.search');
-const $apiDelete = useApi('product.delete');
+interface Product {
+    id: string;
+    title: string;
+    description: string | null;
+    product_type: number | null;
+    base_price: number;
+    published: boolean;
+}
+
 const { t } = useI18n();
-const { successToast } = useToast();
-const {
-    onSort,
-    getSortApiParams,
-    setTableResults,
-    setTableTotalResultsCount,
-    tableResults,
-    tableTotalResultsCount,
-    tableHasNoResults
-} = useTable();
+const upsertModal = useTemplateRef('upsertModal');
+const products = useProducts();
 
-const upsertModal = ref(null);
-const pageSize = ref(100);
-const pageNumber = ref(1);
-const defaultSort = { by: 'title', isDesc: false };
-const activeSort = ref({ ...defaultSort });
-
-function fetchData() {
-    return $apiSearch.tryCatch(
-        async () => {
-            const response = await $apiSearch.run({
-                ...getSortApiParams(),
-                _page: pageNumber.value,
-                _pageSize: pageSize.value
-            });
-
-            setTableResults(response.data);
-            setTableTotalResultsCount(response.pagination.total);
-        }
-    );
-}
-
-function onDeleteItem(id: string) {
-    return $apiDelete.tryCatch(
-        async () => {
-            await $apiDelete.run(id);
-
-            successToast({
-                title: t('Item deleted successfully')
-            });
-
-            fetchData();
-        }
-    );
-}
-
-function onTableSort(val) {
-    activeSort.value = val;
-    onSort(val);
-    fetchData();
-}
-
-watch([pageSize, pageNumber], fetchData);
-
-onMounted(() => {
-    onSort(defaultSort);
-    fetchData();
+const list = useListPage<Product>({
+    search: 'product.search',
+    remove: 'product.delete',
+    defaultSort: { by: 'title' }
 });
+
+function onDelete(id: string) {
+    return list.remove(id, { onRemoved: products.refresh });
+}
 </script>
 
 <template>
     <PageTitle>{{ t('Products') }}</PageTitle>
 
     <div class="mb-4 text-right">
-        <Button @click="upsertModal.show()">
-            {{ t('Add product') }}
-        </Button>
+        <Button @click="upsertModal?.show()">{{ t('Add product') }}</Button>
     </div>
 
-    <Overlay :show="$apiSearch.isLoading.value">
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <SortableTableHead
-                        sort-key="title"
-                        :active-sort-key="activeSort.by"
-                        :sort-desc="activeSort.isDesc"
-                        @sort="onTableSort">{{ t('Title') }}</SortableTableHead>
-                    <SortableTableHead
-                        sort-key="description"
-                        :active-sort-key="activeSort.by"
-                        :sort-desc="activeSort.isDesc"
-                        @sort="onTableSort">{{ t('Description') }}</SortableTableHead>
-                    <TableHead>{{ t('Type') }}</TableHead>
-                    <SortableTableHead
-                        sort-key="base_price"
-                        :active-sort-key="activeSort.by"
-                        :sort-desc="activeSort.isDesc"
-                        class="text-right"
-                        @sort="onTableSort">{{ t('Price') }}</SortableTableHead>
-                    <SortableTableHead
-                        sort-key="published"
-                        :active-sort-key="activeSort.by"
-                        :sort-desc="activeSort.isDesc"
-                        @sort="onTableSort">{{ t('Published') }}</SortableTableHead>
-                    <TableHead class="text-center">{{ t('Actions') }}</TableHead>
-                </TableRow>
-            </TableHeader>
+    <ListTable :list="list" :columns="6">
+        <template #head>
+            <SortableTableHead sort-key="title">{{ t('Title') }}</SortableTableHead>
+            <SortableTableHead sort-key="description">{{ t('Description') }}</SortableTableHead>
+            <TableHead>{{ t('Type') }}</TableHead>
+            <SortableTableHead sort-key="base_price" class="text-right">{{ t('Price') }}</SortableTableHead>
+            <SortableTableHead sort-key="published">{{ t('Published') }}</SortableTableHead>
+            <TableHead class="text-right">{{ t('Actions') }}</TableHead>
+        </template>
 
-            <TableBody>
-                <TableRow v-for="(obj, idx) in tableResults" :key="idx">
-                    <!-- title -->
-                    <TableCell>{{ obj.title }}</TableCell>
+        <template #row="{ row }">
+            <TableCell>{{ row.title }}</TableCell>
+            <TableCell>{{ row.description }}</TableCell>
+            <TableCell>
+                <ProductTypeDisplay :value="row.product_type" />
+            </TableCell>
+            <TableCell class="text-right">
+                <Money :cents="row.base_price" />
+            </TableCell>
+            <TableCell>
+                <BooleanBadge :value="row.published" />
+            </TableCell>
+            <TableCell>
+                <RowActions @edit="upsertModal?.show(row.id)" @delete="onDelete(row.id)" />
+            </TableCell>
+        </template>
+    </ListTable>
 
-                    <!-- description -->
-                    <TableCell>{{ obj.description }}</TableCell>
-
-                    <!-- type -->
-                    <TableCell>
-                        <ProductTypeDisplay :value="obj.product_type" />
-                    </TableCell>
-
-                    <!-- price -->
-                    <TableCell class="text-right">
-                        <Money :cents="obj.base_price" />
-                    </TableCell>
-
-                    <!-- published -->
-                    <TableCell>
-                        <BooleanBadge :value="obj.published" />
-                    </TableCell>
-
-                    <!-- actions -->
-                    <TableCell>
-                        <div class="flex items-center justify-center w-full gap-2">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                @click="upsertModal.show(obj.id)">
-                                <PencilIcon />
-                            </Button>
-
-                            <PopConfirm @confirm="onDeleteItem(obj.id)">
-                                <template v-slot:reference>
-                                    <Button variant="destructive" size="icon">
-                                        <Trash2Icon />
-                                    </Button>
-                                </template>
-                                {{ t('Delete this item?') }}
-                            </PopConfirm>
-                        </div>
-                    </TableCell>
-                </TableRow>
-
-                <TableRow v-if="tableHasNoResults">
-                    <TableCell colspan="6" class="text-center text-muted-foreground">{{ t('No data') }}</TableCell>
-                </TableRow>
-            </TableBody>
-        </Table>
-
-        <DataPagination
-            v-model:page-size="pageSize"
-            v-model:page-number="pageNumber"
-            :total-rows="tableTotalResultsCount" />
-    </Overlay>
-
-    <ProductUpsertModal
-        ref="upsertModal"
-        @success="fetchData" />
+    <ProductUpsertModal ref="upsertModal" @success="list.fetch" />
 </template>

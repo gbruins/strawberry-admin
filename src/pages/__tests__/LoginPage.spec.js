@@ -1,23 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
 import LoginPage from '../LoginPage.vue';
 
-const signInWithPassword = vi.fn();
-vi.mock('@/plugins/supabase', () => ({
-    supabase: { auth: { signInWithPassword: (...args) => signInWithPassword(...args) } }
+// The Supabase/tenant-context sequence itself is covered by stores/__tests__/app.spec.ts —
+// this only checks the page wires the form to appStore.login() and redirects on success.
+
+const login = vi.fn();
+
+vi.mock('@/stores/app', () => ({
+    useAppStore: () => ({ login })
 }));
 
-const loadMe = vi.fn();
-const updateAllowedStreetsState = vi.fn();
-const updateProductTypesState = vi.fn();
-const clearSession = vi.fn();
-let storeState;
-vi.mock('@/stores/app.js', () => ({
-    useAppStore: () => storeState
+const errorToast = vi.fn();
+
+vi.mock('@/composables/useToast', () => ({
+    default: () => ({ errorToast, successToast: vi.fn() })
 }));
 
 const push = vi.fn();
+
 vi.mock('vue-router', async (importOriginal) => {
     const actual = await importOriginal();
     return { ...actual, useRouter: () => ({ push }) };
@@ -30,7 +32,7 @@ function mountLoginPage() {
         global: {
             plugins: [i18n],
             stubs: {
-                Input: { template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />', props: ['modelValue'] },
+                Input: { template: '<input :id="id" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />', props: ['modelValue', 'id'] },
                 Label: { template: '<label><slot /></label>' },
                 Button: { template: '<button><slot /></button>' },
                 Card: { template: '<div><slot /></div>' },
@@ -43,64 +45,35 @@ function mountLoginPage() {
     });
 }
 
+async function submit(wrapper, email, password) {
+    await wrapper.find('#login-email').setValue(email);
+    await wrapper.find('#login-password').setValue(password);
+    await wrapper.find('form').trigger('submit.prevent');
+    await flushPromises();
+}
+
 describe('LoginPage', () => {
     beforeEach(() => {
-        signInWithPassword.mockReset();
-        loadMe.mockReset();
-        updateAllowedStreetsState.mockReset();
-        updateProductTypesState.mockReset();
-        clearSession.mockReset();
+        login.mockReset();
+        errorToast.mockReset();
         push.mockReset();
-        storeState = {
-            loggedInUser: null,
-            loadMe,
-            updateAllowedStreetsState,
-            updateProductTypesState,
-            clearSession
-        };
     });
 
-    it('submits credentials to Supabase and redirects to the dashboard on success', async () => {
-        signInWithPassword.mockResolvedValue({
-            data: { user: { email: 'owner@example.com' } },
-            error: null
-        });
+    it('logs in through the store and redirects to the dashboard on success', async () => {
+        login.mockResolvedValue(undefined);
 
-        const wrapper = mountLoginPage();
-        await wrapper.find('#login-email').setValue('owner@example.com');
-        await wrapper.find('#login-password').setValue('correct-password');
-        await wrapper.find('form').trigger('submit.prevent');
-        await flushMicrotasks();
+        await submit(mountLoginPage(), 'owner@example.com', 'correct-password');
 
-        expect(signInWithPassword).toHaveBeenCalledWith({
-            email: 'owner@example.com',
-            password: 'correct-password'
-        });
-        expect(storeState.loggedInUser).toBe('owner@example.com');
-        expect(loadMe).toHaveBeenCalledOnce();
-        expect(updateAllowedStreetsState).toHaveBeenCalledOnce();
-        expect(updateProductTypesState).toHaveBeenCalledOnce();
+        expect(login).toHaveBeenCalledWith('owner@example.com', 'correct-password');
         expect(push).toHaveBeenCalledWith({ name: 'dashboard' });
     });
 
-    it('clears the session and does not redirect when Supabase rejects the credentials', async () => {
-        signInWithPassword.mockResolvedValue({
-            data: null,
-            error: new Error('Invalid login credentials')
-        });
+    it('shows an error and does not redirect when login fails', async () => {
+        login.mockRejectedValue(new Error('Invalid login credentials'));
 
-        const wrapper = mountLoginPage();
-        await wrapper.find('#login-email').setValue('owner@example.com');
-        await wrapper.find('#login-password').setValue('wrong-password');
-        await wrapper.find('form').trigger('submit.prevent');
-        await flushMicrotasks();
+        await submit(mountLoginPage(), 'owner@example.com', 'wrong-password');
 
-        expect(clearSession).toHaveBeenCalledOnce();
-        expect(loadMe).not.toHaveBeenCalled();
+        expect(errorToast).toHaveBeenCalledOnce();
         expect(push).not.toHaveBeenCalled();
     });
 });
-
-function flushMicrotasks() {
-    return new Promise((resolve) => setTimeout(resolve, 0));
-}

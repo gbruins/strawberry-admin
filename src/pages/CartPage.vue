@@ -1,39 +1,35 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import PageTitle from '@/components/layouts/PageTitle.vue';
 import Overlay from '@/components/Overlay.vue';
 import Format8601 from '@/components/Format8601.vue';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import CartStatusBadge from '@/components/cart/CartStatusBadge.vue';
 import CartDetailPaymentCard from '@/components/cart/CartDetailPaymentCard.vue';
 import CartDetailBillingCard from '@/components/cart/CartDetailBillingCard.vue';
 import CartDetailCartCard from '@/components/cart/CartDetailCartCard.vue';
 import CartDetailNotesCard from '@/components/cart/CartDetailNotesCard.vue';
 import CartDetailItemsCard from '@/components/cart/CartDetailItemsCard.vue';
-
 import useApi from '@/composables/useApi';
+import type { Cart } from '@/types/cart';
 
 const $apiRead = useApi('cart.read');
 const { t } = useI18n();
 const route = useRoute();
 
-const cartId = route.params.id;
-const cartData = ref(null);
+const cart = ref<Cart | null>(null);
 
-function fetchData() {
-    return $apiRead.tryCatch(
-        async () => {
-            const response = await $apiRead.run(cartId);
-            cartData.value = response.data;
-        }
-    );
+function fetchData(id: string) {
+    return $apiRead.tryCatch(async () => {
+        const response = await $apiRead.run(id);
+        cart.value = response.data;
+    });
 }
 
-onMounted(() => {
-    fetchData();
-});
+// Watched, not read once: navigating cart → cart reuses this component instance.
+watch(() => route.params.id as string, fetchData, { immediate: true });
 </script>
 
 <template>
@@ -41,40 +37,32 @@ onMounted(() => {
 
     <Overlay :show="$apiRead.isLoading.value">
         <div class="grid grid-cols-1 gap-10">
-            <div class="grid grid-cols-4 gap-10">
-                <!-- cart status -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-10">
                 <div class="grid gap-1.5">
                     <Label class="font-semibold">{{ t('Status') }}:</Label>
-
-                    <div v-if="cartData?.closed_at" class="flex items-center gap-2">
-                        <Badge variant="success">{{ t('Closed') }}</Badge>
-                        <Format8601 :date="cartData?.closed_at" />
-                    </div>
-                    <Badge v-else variant="destructive">{{ t('Open') }}</Badge>
+                    <CartStatusBadge :closed-at="cart?.closed_at" with-date />
                 </div>
 
-                <!-- cart created at -->
                 <div class="grid gap-1.5">
                     <Label class="font-semibold">{{ t('Created') }}:</Label>
-                    <Format8601 :date="cartData?.created_at" />
+                    <Format8601 :date="cart?.created_at" />
                 </div>
 
-                <!-- pickup code -->
                 <div class="grid gap-1.5">
                     <Label class="font-semibold">{{ t('Pickup code') }}:</Label>
-                    <div>{{ cartData?.pickup_code ?? '—' }}</div>
+                    <div>{{ cart?.pickup_code ?? '—' }}</div>
                 </div>
             </div>
 
-            <CartDetailItemsCard :cart="cartData" />
+            <CartDetailItemsCard :cart="cart" />
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
-                <CartDetailCartCard :cart="cartData" />
-                <CartDetailBillingCard :cart="cartData" />
-                <CartDetailPaymentCard :cart="cartData" />
+                <CartDetailCartCard :cart="cart" />
+                <CartDetailBillingCard :cart="cart" />
+                <CartDetailPaymentCard :cart="cart" />
             </div>
 
-            <CartDetailNotesCard :cart="cartData" />
+            <CartDetailNotesCard v-if="cart" :cart="cart" />
         </div>
     </Overlay>
 </template>

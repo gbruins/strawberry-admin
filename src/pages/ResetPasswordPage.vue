@@ -1,92 +1,56 @@
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue';
+import { reactive, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { supabase } from '@/plugins/supabase';
-import { useAppStore } from '@/stores/app.js';
-import useExceptionToast from '@/composables/useExceptionToast';
-import useToast from '@/composables/useToast.js';
+import { useAppStore } from '@/stores/app';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import AuthCard from '@/components/AuthCard.vue';
+import FormField from '@/components/FormField.vue';
+import useAsyncAction from '@/composables/useAsyncAction';
+import useToast from '@/composables/useToast';
 
-// Reached via the link in the email supabase.auth.resetPasswordForEmail() sends
-// (ForgotPasswordPage.vue); Supabase's client parses the recovery token out of the URL on
-// load and establishes a session automatically (detectSessionInUrl, default true), so by the
-// time this page is interactive, supabase.auth.updateUser() below just works.
+// Reached via the link in the email ForgotPasswordPage requests. Supabase's client parses the
+// recovery token out of the URL on load and establishes a session (detectSessionInUrl), so by
+// the time this page is interactive, appStore.updatePassword() just works.
+
+const MIN_PASSWORD_LENGTH = 8;
+
 const { t } = useI18n();
 const router = useRouter();
 const appStore = useAppStore();
-const { showExceptionToast } = useExceptionToast();
 const { successToast } = useToast();
 
 const form = reactive({ password: '', confirmPassword: '' });
-const isLoading = ref(false);
 
-const buttonIsEnabled = computed(() => {
-    return form.password?.length >= 8 && form.password === form.confirmPassword;
+const mismatch = computed(() => form.confirmPassword.length > 0 && form.password !== form.confirmPassword);
+const canSubmit = computed(() => form.password.length >= MIN_PASSWORD_LENGTH && form.password === form.confirmPassword);
+
+const update = useAsyncAction(async () => {
+    await appStore.updatePassword(form.password);
+    successToast({ title: t('Password updated'), text: t('You can now log in with your new password.') });
+    await router.push({ name: 'login' });
 });
-
-async function onSubmit() {
-    isLoading.value = true;
-
-    try {
-        const { error } = await supabase.auth.updateUser({ password: form.password });
-
-        if (error) {
-            throw error;
-        }
-
-        successToast({ title: t('Password updated'), text: t('You can now log in with your new password.') });
-        appStore.clearSession();
-        router.push({ name: 'login' });
-    }
-    catch (error) {
-        console.error(error);
-        showExceptionToast(error);
-    }
-    finally {
-        isLoading.value = false;
-    }
-}
 </script>
 
 <template>
-    <div class="w-full max-w-96">
-        <Card>
-            <CardHeader>
-                <CardTitle class="text-center text-xl">{{ t('Set a new password') }}</CardTitle>
-            </CardHeader>
+    <AuthCard :title="t('Set a new password')">
+        <form class="grid grid-cols-1 gap-4" @submit.prevent="update.run()">
+            <FormField
+                :label="t('New password')"
+                for="reset-password"
+                :hint="t('At least {min} characters', { min: MIN_PASSWORD_LENGTH })">
+                <Input id="reset-password" v-model="form.password" type="password" autocomplete="new-password" />
+            </FormField>
 
-            <CardContent>
-                <form class="grid grid-cols-1 gap-4" @submit.prevent="onSubmit">
-                    <div class="grid gap-1.5">
-                        <Label for="reset-password">{{ t('New password') }}</Label>
-                        <Input
-                            id="reset-password"
-                            v-model="form.password"
-                            type="password"
-                            autocomplete="new-password" />
-                    </div>
+            <FormField :label="t('Confirm password')" for="reset-password-confirm">
+                <Input id="reset-password-confirm" v-model="form.confirmPassword" type="password" autocomplete="new-password" />
+                <p v-if="mismatch" class="text-sm text-destructive" role="alert">{{ t('Passwords do not match') }}</p>
+            </FormField>
 
-                    <div class="grid gap-1.5">
-                        <Label for="reset-password-confirm">{{ t('Confirm password') }}</Label>
-                        <Input
-                            id="reset-password-confirm"
-                            v-model="form.confirmPassword"
-                            type="password"
-                            autocomplete="new-password" />
-                    </div>
-
-                    <Button
-                        type="submit"
-                        class="w-full"
-                        :disabled="!buttonIsEnabled || isLoading">
-                        {{ t('Update password') }}
-                    </Button>
-                </form>
-            </CardContent>
-        </Card>
-    </div>
+            <Button type="submit" class="w-full" :disabled="!canSubmit || update.isLoading.value">
+                {{ t('Update password') }}
+            </Button>
+        </form>
+    </AuthCard>
 </template>

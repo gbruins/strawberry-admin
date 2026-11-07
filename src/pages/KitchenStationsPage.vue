@@ -1,22 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { KeyRoundIcon, Trash2Icon } from '@lucide/vue';
+import { KeyRoundIcon } from '@lucide/vue';
 import PageTitle from '@/components/layouts/PageTitle.vue';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import Overlay from '@/components/Overlay.vue';
-import PopConfirm from '@/components/PopConfirm.vue';
+import ListTable from '@/components/ListTable.vue';
+import RowActions from '@/components/RowActions.vue';
 import KitchenStationUpsertModal from '@/components/kitchenStations/KitchenStationUpsertModal.vue';
 import KitchenStationRotatePinModal from '@/components/kitchenStations/KitchenStationRotatePinModal.vue';
-import useApi from '@/composables/useApi';
-import useToast from '@/composables/useToast';
-
-const { t } = useI18n();
-const { successToast } = useToast();
-const $apiSearch = useApi('kitchenStation.search');
-const $apiRevoke = useApi('kitchenStation.revoke');
+import useListPage from '@/composables/useListPage';
 
 interface KitchenStation {
     id: string;
@@ -25,88 +19,61 @@ interface KitchenStation {
     revoked_at: string | null;
 }
 
-const upsertModal = ref(null);
-const rotatePinModal = ref(null);
-const stations = ref<KitchenStation[]>([]);
+const { t } = useI18n();
+const upsertModal = useTemplateRef('upsertModal');
+const rotatePinModal = useTemplateRef('rotatePinModal');
 
-function fetchData() {
-    return $apiSearch.tryCatch(async () => {
-        const response = await $apiSearch.run();
-        stations.value = response.data || [];
-    });
-}
-
-function onRevoke(id: string) {
-    return $apiRevoke.tryCatch(async () => {
-        await $apiRevoke.run(id);
-
-        successToast({ title: t('Station revoked') });
-
-        fetchData();
-    });
-}
-
-onMounted(fetchData);
+// The stations endpoint returns the whole (small) collection — no pagination or sorting.
+const list = useListPage<KitchenStation>({
+    search: 'kitchenStation.search',
+    remove: 'kitchenStation.revoke',
+    paginated: false
+});
 </script>
 
 <template>
     <PageTitle>{{ t('Kitchen Stations') }}</PageTitle>
 
     <div class="mb-4 text-right">
-        <Button @click="upsertModal.show()">{{ t('Add kitchen station') }}</Button>
+        <Button @click="upsertModal?.show()">{{ t('Add kitchen station') }}</Button>
     </div>
 
-    <Overlay :show="$apiSearch.isLoading.value">
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>{{ t('Name') }}</TableHead>
-                    <TableHead>{{ t('Station code') }}</TableHead>
-                    <TableHead>{{ t('Status') }}</TableHead>
-                    <TableHead class="text-center">{{ t('Actions') }}</TableHead>
-                </TableRow>
-            </TableHeader>
+    <ListTable :list="list" :columns="4">
+        <template #head>
+            <TableHead>{{ t('Name') }}</TableHead>
+            <TableHead>{{ t('Station code') }}</TableHead>
+            <TableHead>{{ t('Status') }}</TableHead>
+            <TableHead class="text-right">{{ t('Actions') }}</TableHead>
+        </template>
 
-            <TableBody>
-                <TableRow v-for="station in stations" :key="station.id">
-                    <TableCell>{{ station.name }}</TableCell>
-                    <TableCell class="font-mono">{{ station.station_code }}</TableCell>
+        <template #row="{ row }">
+            <TableCell>{{ row.name }}</TableCell>
+            <TableCell class="font-mono">{{ row.station_code }}</TableCell>
+            <TableCell>
+                <Badge :variant="row.revoked_at ? 'destructive' : 'success'">
+                    {{ row.revoked_at ? t('Revoked') : t('Active') }}
+                </Badge>
+            </TableCell>
+            <TableCell>
+                <RowActions
+                    :deletable="!row.revoked_at"
+                    :delete-label="t('Revoke station')"
+                    :delete-confirm="t('Revoke this station? Any logged-in tablet will be signed out immediately.')"
+                    @delete="list.remove(row.id, { successMessage: t('Station revoked') })">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        :aria-label="t('Rotate station PIN')"
+                        :title="t('Rotate station PIN')"
+                        :disabled="!!row.revoked_at"
+                        @click="rotatePinModal?.show(row.id)">
+                        <KeyRoundIcon />
+                    </Button>
+                </RowActions>
+            </TableCell>
+        </template>
+    </ListTable>
 
-                    <TableCell>
-                        <Badge :variant="station.revoked_at ? 'destructive' : 'success'">
-                            {{ station.revoked_at ? t('Revoked') : t('Active') }}
-                        </Badge>
-                    </TableCell>
-
-                    <TableCell>
-                        <div class="flex items-center justify-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                :disabled="!!station.revoked_at"
-                                @click="rotatePinModal.show(station.id)">
-                                <KeyRoundIcon />
-                            </Button>
-
-                            <PopConfirm v-if="!station.revoked_at" @confirm="onRevoke(station.id)">
-                                {{ t('Revoke this station? Any logged-in tablet will be signed out immediately.') }}
-                                <template #reference>
-                                    <Button variant="destructive" size="icon">
-                                        <Trash2Icon />
-                                    </Button>
-                                </template>
-                            </PopConfirm>
-                        </div>
-                    </TableCell>
-                </TableRow>
-
-                <TableRow v-if="!stations.length">
-                    <TableCell colspan="4" class="text-center text-muted-foreground">{{ t('No data') }}</TableCell>
-                </TableRow>
-            </TableBody>
-        </Table>
-    </Overlay>
-
-    <KitchenStationUpsertModal ref="upsertModal" @success="fetchData" />
-    <KitchenStationRotatePinModal ref="rotatePinModal" @success="fetchData" />
+    <KitchenStationUpsertModal ref="upsertModal" @success="list.fetch" />
+    <KitchenStationRotatePinModal ref="rotatePinModal" @success="list.fetch" />
 </template>
