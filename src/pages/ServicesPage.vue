@@ -15,7 +15,8 @@ import PopConfirm from '@/components/PopConfirm.vue';
 import DateTimePicker from '@/components/DateTimePicker.vue';
 import Format8601 from '@/components/Format8601.vue';
 import ServiceUpsertModal from '@/components/services/ServiceUpsertModal.vue';
-import { MailIcon } from '@lucide/vue';
+import ServiceAvailabilityModal from '@/components/services/ServiceAvailabilityModal.vue';
+import { MailIcon, PackageIcon } from '@lucide/vue';
 import useApi from '@/composables/useApi';
 import useListPage from '@/composables/useListPage';
 import useToast from '@/composables/useToast';
@@ -35,6 +36,7 @@ const { successToast, addToast } = useToast();
 const $apiNotify = useApi('notification.send');
 const menus = useMenus();
 const upsertModal = useTemplateRef('upsertModal');
+const availabilityModal = useTemplateRef('availabilityModal');
 // Reactive clock so "Next" and the notify button update as services start/end while the page is open.
 const now = useTimestamp({ interval: 60_000 });
 
@@ -134,6 +136,18 @@ function onNotify(id: string) {
                 <TableCell class="text-right">{{ row.inventory_count }}</TableCell>
                 <TableCell>
                     <RowActions @edit="upsertModal?.show(row.id)" @delete="list.remove(row.id)">
+                        <!-- Mark menu products out of stock for this one service -->
+                        <Button
+                            v-if="row.service_menu_id && !serviceHasEnded(row, now)"
+                            variant="ghost"
+                            size="icon"
+                            data-test="service-stock"
+                            :aria-label="t('Stock')"
+                            :title="t('Stock')"
+                            @click="availabilityModal?.show(row.id)">
+                            <PackageIcon />
+                        </Button>
+
                         <!-- Hidden once the opening has ended, so staff can't advertise one that's gone. -->
                         <PopConfirm v-if="!serviceHasEnded(row, now)" @confirm="onNotify(row.id)">
                             <template #reference>
@@ -158,4 +172,5 @@ function onNotify(id: string) {
     </SearchFilterLayout>
 
     <ServiceUpsertModal ref="upsertModal" @success="list.fetch" />
+    <ServiceAvailabilityModal ref="availabilityModal" />
 </template>

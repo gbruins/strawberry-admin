@@ -58,7 +58,8 @@ export function resetLookups() {
 
 export interface MenuLookup extends Record<string, unknown> { id: string, title: string, published: boolean }
 export interface ProductLookup extends Record<string, unknown> { id: string, title: string, published: boolean }
-export interface ProductTypeLookup extends Record<string, unknown> { id: string, name: string, value: number }
+// `built_in`: the Pizza type, which the per-order cap and inventory apply to. It can't be deleted.
+export interface ProductTypeLookup extends Record<string, unknown> { id: string, name: string, value: number, built_in?: boolean }
 
 export const useMenus = defineLookup<MenuLookup>('serviceMenu.search', { _pageSize: 500, _sort: 'title:asc' });
 export const useProducts = defineLookup<ProductLookup>('product.search', { _pageSize: 500, _sort: 'title:asc' });

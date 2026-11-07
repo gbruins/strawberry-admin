@@ -102,7 +102,7 @@ defineExpose({ show: upsert.show });
             </NativeSelect>
         </FormField>
 
-        <FormField :label="t('Max pizzas per order')" for="service-max-per-order" :field="upsert.v$.max_per_order">
+        <FormField :label="t('Max pizzas per order')" for="service-max-per-order" :field="upsert.v$.max_per_order" :hint="t('Only applies to products of type Pizza.')">
             <Input id="service-max-per-order" v-model.number="upsert.form.max_per_order" type="number" min="1" step="1" />
         </FormField>
     </FormDialog>
