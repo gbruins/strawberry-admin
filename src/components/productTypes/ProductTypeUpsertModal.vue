@@ -40,6 +40,10 @@ defineExpose({ show: upsert.show });
         :title="upsert.isEdit ? t('Update product type') : t('Create product type')"
         :busy="upsert.isBusy"
         @submit="upsert.submit">
+        <p v-if="upsert.record?.built_in" class="text-sm text-muted-foreground">
+            {{ t('Built-in type: products of this type count toward inventory and the per-order limit.') }}
+        </p>
+
         <FormField :label="t('Name')" for="product-type-name" :field="upsert.v$.name">
             <Input id="product-type-name" v-model="upsert.form.name" />
         </FormField>

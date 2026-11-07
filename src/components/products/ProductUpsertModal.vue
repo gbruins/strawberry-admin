@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { required } from '@vuelidate/validators';
 import { Input } from '@/components/ui/input';
@@ -10,28 +11,39 @@ import MoneyInput from '@/components/MoneyInput.vue';
 import ProductTypeSelect from '@/components/productTypes/ProductTypeSelect.vue';
 import StripeTaxCodeSelect from '@/components/products/StripeTaxCodeSelect.vue';
 import useUpsertForm from '@/composables/useUpsertForm';
-import { useProducts } from '@/composables/useLookups';
+import { useProducts, useProductTypes } from '@/composables/useLookups';
 import { DEFAULT_STRIPE_TAX_CODE } from '@/constants/stripeTaxCodes';
 
 const emit = defineEmits<{ success: [] }>();
 const { t } = useI18n();
 const products = useProducts();
+const productTypes = useProductTypes();
+
+// New products default to the built-in Pizza type
+const defaultProductType = () => productTypes.items.value.find((type) => type.built_in)?.value ?? null;
 
 const upsert = useUpsertForm({
     resource: 'product',
     defaults: () => ({
         title: '',
         description: '',
-        product_type: null as number | null,
+        product_type: defaultProductType() as number | null,
         base_price: 0,
         stripe_tax_code: DEFAULT_STRIPE_TAX_CODE as string | null,
         published: true
     }),
-    rules: () => ({ title: { required } }),
+    rules: () => ({ title: { required }, product_type: { required } }),
     successMessage: () => t('Product saved successfully'),
     onSaved: () => {
         products.refresh();
         emit('success');
+    }
+});
+
+// The types may still be loading when the dialog opens
+watch(() => productTypes.items.value, () => {
+    if (!upsert.isEdit && upsert.form.product_type === null) {
+        upsert.form.product_type = defaultProductType();
     }
 });
 
@@ -58,8 +70,8 @@ defineExpose({ show: upsert.show });
             <Input id="product-description" v-model="upsert.form.description" />
         </FormField>
 
-        <FormField :label="t('Product type')">
-            <ProductTypeSelect v-model="upsert.form.product_type" clearable />
+        <FormField :label="t('Product type')" :field="upsert.v$.product_type">
+            <ProductTypeSelect v-model="upsert.form.product_type" />
         </FormField>
 
         <FormField :label="t('Price')">
