@@ -2,7 +2,7 @@ import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import useApi from '@/composables/useApi';
 
 /**
- * Small reference collections (menus, products, product types, allowed streets) that several
+ * Small reference collections (menus, products, product types) that several
  * screens need for selects and id→label display. Each is fetched once, shared app-wide, and
  * refreshed explicitly after a create/update/delete of that resource.
  */
@@ -59,10 +59,8 @@ export function resetLookups() {
 export interface MenuLookup extends Record<string, unknown> { id: string, title: string, published: boolean }
 export interface ProductLookup extends Record<string, unknown> { id: string, title: string, published: boolean }
 export interface ProductTypeLookup extends Record<string, unknown> { id: string, name: string, value: number }
-export interface AllowedStreetLookup extends Record<string, unknown> { id: string, street_name: string, active: boolean }
 
 export const useMenus = defineLookup<MenuLookup>('serviceMenu.search', { _pageSize: 500, _sort: 'title:asc' });
 export const useProducts = defineLookup<ProductLookup>('product.search', { _pageSize: 500, _sort: 'title:asc' });
 // Products reference their type by the numeric `value`, not the row id.
 export const useProductTypes = defineLookup<ProductTypeLookup>('productType.search', { _pageSize: 500, _sort: 'name:asc' }, 'value');
-export const useAllowedStreets = defineLookup<AllowedStreetLookup>('allowedStreet.search', { _pageSize: 500, _sort: 'street_name:asc' });

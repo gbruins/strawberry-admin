@@ -5,8 +5,6 @@ import qs from 'qs';
 import Auth from '@/api/auth';
 import Product from '@/api/product';
 import ProductType from '@/api/product_type';
-import AllowedStreet from '@/api/allowed_street';
-import AddressDiscount from '@/api/address_discount';
 import Cart from '@/api/cart';
 import Service from '@/api/service';
 import ServiceMenu from '@/api/service_menu';
@@ -150,8 +148,6 @@ export default {
         }
 
         app.provide('$api', {
-            addressDiscount: AddressDiscount(utils),
-            allowedStreet: AllowedStreet(utils),
             auth: Auth(utils),
             cart: Cart(utils),
             product: Product(utils),

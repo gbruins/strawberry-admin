@@ -6,8 +6,6 @@ import {
     BookOpenIcon,
     PizzaIcon,
     TagIcon,
-    MapPinIcon,
-    BadgePercentIcon,
     MailIcon,
     StoreIcon,
     ChefHatIcon
@@ -50,10 +48,8 @@ export const NAV_GROUPS: NavGroup[] = [
         ]
     },
     {
-        label: 'Delivery & customers',
+        label: 'Customers',
         items: [
-            { name: 'allowed_streets', label: 'Allowed streets', icon: MapPinIcon },
-            { name: 'address_discounts', label: 'Address discounts', icon: BadgePercentIcon },
             { name: 'subscribers', label: 'Subscribers', icon: MailIcon }
         ]
     },

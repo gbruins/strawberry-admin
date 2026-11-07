@@ -14,18 +14,6 @@ const router = createRouter({
         },
 
         {
-            path: '/allowed-streets',
-            name: 'allowed_streets',
-            component: () => import('@/pages/AllowedStreetsPage.vue'),
-        },
-
-        {
-            path: '/address-discounts',
-            name: 'address_discounts',
-            component: () => import('@/pages/AddressDiscountsPage.vue'),
-        },
-
-        {
             path: '/subscribers',
             name: 'subscribers',
             component: () => import('@/pages/SubscribersPage.vue'),
