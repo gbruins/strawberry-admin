@@ -1,17 +1,11 @@
-<script setup>
+<script setup lang="ts">
 import { Loader2Icon } from '@lucide/vue';
 
-defineProps({
-    show: {
-        type: Boolean,
-        default: false
-    }
-});
+withDefaults(defineProps<{ show?: boolean }>(), { show: false });
 </script>
 
-
 <template>
-    <div :class="{ relative: show }">
+    <div :class="{ relative: show }" :aria-busy="show">
         <slot />
 
         <div

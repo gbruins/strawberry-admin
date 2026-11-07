@@ -1,7 +1,7 @@
-<script setup>
-import { ref, computed, watch } from 'vue';
+<script setup lang="ts">
+import { ref, shallowRef, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { CalendarDate } from '@internationalized/date';
+import { CalendarDate, type DateValue } from '@internationalized/date';
 import { fromZonedTime, toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { CalendarIcon, XIcon } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
@@ -10,41 +10,32 @@ import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { useAppStore } from '@/stores/app';
 
-const props = defineProps({
-    modelValue: {
-        type: String,
-        default: null
-    },
-
-    // Defaults to the logged-in admin's own tenant (specs/004-multi-tenant-supabase T033) —
-    // only pass this explicitly to edit/display a time in some OTHER zone.
-    timezone: {
-        type: String,
-        default: null
-    },
-
-    clearable: {
-        type: Boolean,
-        default: true
-    },
-
-    enableTime: {
-        type: Boolean,
-        default: true
-    }
+const props = withDefaults(defineProps<{
+    /** ISO-8601 instant, or null */
+    modelValue?: string | null;
+    /** Defaults to the logged-in admin's own tenant — only pass this to edit a time in some OTHER zone. */
+    timezone?: string | null;
+    clearable?: boolean;
+    enableTime?: boolean;
+}>(), {
+    modelValue: null,
+    timezone: null,
+    clearable: true,
+    enableTime: true
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>();
 
 const { t } = useI18n();
 const appStore = useAppStore();
 const open = ref(false);
-const calendarDate = ref(null);
+// shallowRef: a deep ref would unwrap CalendarDate's class type and no longer match <Calendar>'s DateValue.
+const calendarDate = shallowRef<CalendarDate | null>(null);
 const timeValue = ref('00:00');
 
 const effectiveTimezone = computed(() => props.timezone || appStore.timezone || 'UTC');
 
-function zonedPartsFromIso(iso) {
+function zonedPartsFromIso(iso: string | null) {
     if (!iso) {
         return null;
     }
@@ -83,8 +74,8 @@ function emitFromParts() {
     emit('update:modelValue', fromZonedTime(wallClock, effectiveTimezone.value).toISOString());
 }
 
-function onCalendarSelect(val) {
-    calendarDate.value = val;
+function onCalendarSelect(val: DateValue | undefined) {
+    calendarDate.value = val ? new CalendarDate(val.year, val.month, val.day) : null;
     emitFromParts();
 }
 
@@ -92,7 +83,7 @@ function onTimeInput() {
     emitFromParts();
 }
 
-function onClear(e) {
+function onClear(e: Event) {
     e.stopPropagation();
     calendarDate.value = null;
     timeValue.value = '00:00';
@@ -123,7 +114,7 @@ const displayLabel = computed(() => {
         </PopoverTrigger>
 
         <PopoverContent class="w-auto p-0">
-            <Calendar v-model="calendarDate" @update:model-value="onCalendarSelect" />
+            <Calendar :model-value="calendarDate ?? undefined" @update:model-value="onCalendarSelect" />
             <div v-if="enableTime" class="px-3 pb-3">
                 <Input type="time" v-model="timeValue" @change="onTimeInput" />
             </div>

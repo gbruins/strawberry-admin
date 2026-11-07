@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts" generic="T extends string | number | boolean">
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { CheckIcon, ChevronsUpDownIcon, XIcon } from '@lucide/vue';
@@ -13,40 +13,30 @@ import {
     CommandList
 } from '@/components/ui/command';
 
-const props = defineProps({
-    options: {
-        type: Array,
-        default: () => []
-    },
-
-    placeholder: {
-        type: String,
-        default: null
-    },
-
-    clearable: {
-        type: Boolean,
-        default: false
-    }
+const props = withDefaults(defineProps<{
+    options?: { label: string, value: T }[];
+    placeholder?: string;
+    clearable?: boolean;
+}>(), {
+    options: () => [],
+    clearable: false
 });
 
-const modelValue = defineModel();
+const modelValue = defineModel<T | null>();
 
 const { t } = useI18n();
 const open = ref(false);
 
-const selectedLabel = computed(() => {
-    const match = props.options.find(opt => opt.value === modelValue.value);
-    return match ? match.label : null;
-});
+const selectedLabel = computed(() => props.options.find((option) => option.value === modelValue.value)?.label ?? null);
+const hasValue = computed(() => modelValue.value !== null && modelValue.value !== undefined);
 
-function onSelect(value) {
+function onSelect(value: T) {
     modelValue.value = value;
     open.value = false;
 }
 
-function onClear(e) {
-    e.stopPropagation();
+function onClear(event: Event) {
+    event.stopPropagation();
     modelValue.value = null;
 }
 </script>
@@ -63,8 +53,9 @@ function onClear(e) {
                 <span class="truncate" :class="{ 'text-muted-foreground': !selectedLabel }">{{ selectedLabel || placeholder || t('Select...') }}</span>
                 <span class="flex items-center gap-1 shrink-0">
                     <XIcon
-                        v-if="clearable && modelValue"
+                        v-if="clearable && hasValue"
                         class="size-3.5 opacity-50 hover:opacity-100"
+                        :aria-label="t('Clear')"
                         @click="onClear" />
                     <ChevronsUpDownIcon class="size-4 opacity-50" />
                 </span>
@@ -79,7 +70,7 @@ function onClear(e) {
                     <CommandGroup>
                         <CommandItem
                             v-for="option in options"
-                            :key="option.value"
+                            :key="String(option.value)"
                             :value="option.label"
                             @select="onSelect(option.value)">
                             <CheckIcon :class="['size-4', modelValue === option.value ? 'opacity-100' : 'opacity-0']" />

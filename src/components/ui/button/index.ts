@@ -25,6 +25,9 @@ export const buttonVariants = cva(
         'icon-xs': 'size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*=size-])]:size-3',
         'icon-sm': 'size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg',
         'icon-lg': 'size-9',
+        // Kitchen kiosk (KitchenLayout): large, glove/wet-finger-friendly targets.
+        'touch': 'h-12 gap-2 px-4 text-base [&_svg:not([class*=size-])]:size-5',
+        'icon-touch': 'size-12 [&_svg:not([class*=size-])]:size-6',
       },
     },
     defaultVariants: {

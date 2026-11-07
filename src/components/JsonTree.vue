@@ -1,128 +1,80 @@
-<script>
-// This component was borrowed heavily from
-// https://github.com/myst729/vue-json-tree/blob/master/src/json-tree.vue
-export default {
-    name: 'JsonTree'
-}
-</script>
-
-<script setup>
+<script setup lang="ts">
+// Adapted from https://github.com/myst729/vue-json-tree/blob/master/src/json-tree.vue
 import { ref, computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
-import isString from 'lodash.isstring';
 import { ChevronDownIcon, ChevronRightIcon } from '@lucide/vue';
 
-const props = defineProps({
-    /**
-     * The JSON data to display.
-     */
-    data: {},
+defineOptions({ name: 'JsonTree' });
 
-    /**
-     * The maximum depth to expand the tree to.
-     */
-    level: {
-        type: Number,
-        default: Infinity
-    },
+interface Node {
+    depth: number;
+    last: boolean;
+    primitive: boolean;
+    key?: string;
+    type: string;
+    value: string | Node[];
+}
 
-    kv: {
-        type: Object
-    }
+const props = withDefaults(defineProps<{
+    /** The data to display (an object/array, or a JSON string). */
+    data?: unknown;
+    /** Expand the tree to this depth initially. */
+    level?: number;
+    /** Internal: a pre-parsed node, when rendering a child. */
+    kv?: Node;
+}>(), {
+    level: Infinity
 });
-
-const { t } = useI18n();
 
 const expanded = ref(true);
 const hovered = ref(false);
 
-const parsed = computed(() => {
+function parse(data: unknown, depth = 0, last = true, key?: string): Node {
+    const base = { depth, last, key };
+
+    if (data === null) {
+        return { ...base, primitive: true, type: 'null', value: 'null' };
+    }
+
+    if (typeof data !== 'object') {
+        return { ...base, primitive: true, type: typeof data, value: JSON.stringify(data) };
+    }
+
+    if (Array.isArray(data)) {
+        return { ...base, primitive: false, type: 'array', value: data.map((item, i) => parse(item, depth + 1, i === data.length - 1)) };
+    }
+
+    const entries = Object.entries(data as Record<string, unknown>);
+
+    return {
+        ...base,
+        primitive: false,
+        type: 'object',
+        value: entries.map(([k, v], i) => parse(v, depth + 1, i === entries.length - 1, k))
+    };
+}
+
+const parsed = computed<Node>(() => {
     if (props.kv) {
         return props.kv;
     }
 
-    let result;
+    if (typeof props.data === 'undefined') {
+        return parse('[json-tree] No data passed.');
+    }
 
-    try {
-        if (isString(props.data)) {
-            result = JSON.parse(props.data);
+    if (typeof props.data === 'string') {
+        try {
+            return parse(JSON.parse(props.data));
         }
-        else if (typeof props.data !== 'undefined') {
-            result = props.data;
-        }
-        else {
-            result = '[json-tree] No data passed.';
-            console.warn(result);
+        catch {
+            return parse('[json-tree] Invalid JSON passed in data prop.');
         }
     }
-    catch (e) {
-        result = '[json-tree] Invalid JSON passed in data prop.';
-        console.warn(result);
-    }
-    finally {
-        return parse(result);
-    }
+
+    return parse(props.data);
 });
 
-
-function parse (data, depth = 0, last = true, key = undefined) {
-    let kv = {
-        depth,
-        last,
-        primitive: true,
-        key: key
-    }
-
-    if (typeof data !== 'object') {
-        return Object.assign(
-            kv,
-            {
-                type: typeof data,
-                value: JSON.stringify(data)
-            }
-        );
-    }
-
-    if (data === null) {
-        return Object.assign(
-            kv,
-            {
-                type: 'null',
-                value: 'null'
-            }
-        );
-    }
-
-    if (Array.isArray(data)) {
-        let value = data.map((item, index) => {
-            return parse(item, depth + 1, index === data.length - 1)
-        });
-
-        return Object.assign(
-            kv,
-            {
-                primitive: false,
-                type: 'array',
-                value
-            }
-        );
-    }
-
-    let keys = Object.keys(data);
-
-    let value = keys.map((key, index) => {
-        return parse(data[key], depth + 1, index === keys.length - 1, key)
-    });
-
-    return Object.assign(
-        kv,
-        {
-            primitive: false,
-            type: 'object',
-            value
-        }
-    )
-}
+const children = computed(() => (Array.isArray(parsed.value.value) ? parsed.value.value : []));
 
 onMounted(() => {
     expanded.value = parsed.value.depth < props.level;
@@ -149,7 +101,7 @@ onMounted(() => {
             <span class="json-tree-indent" v-for="n in (parsed.depth * 2 + 1)" :key="n">&nbsp;</span>
             <span class="json-tree-key" v-if="parsed.key">{{ parsed.key }}:&nbsp;</span>
             <span class="json-tree-open">{{ parsed.type === 'array' ? '[' : '{' }}</span>
-            <span class="json-tree-collapsed" v-show="!expanded">&nbsp;/*&nbsp;{{ $t('{num} items', { num: parsed.value.length }, parsed.value.length) }}&nbsp;*/&nbsp;</span>
+            <span class="json-tree-collapsed" v-show="!expanded">&nbsp;/*&nbsp;{{ $t('{num} items', { num: children.length }, children.length) }}&nbsp;*/&nbsp;</span>
             <span class="json-tree-close" v-show="!expanded">{{ parsed.type === 'array' ? ']' : '}' }}</span>
             <span v-show="!expanded && !parsed.last">,</span>
             <span class="json-tree-indent">&nbsp;</span>
@@ -157,7 +109,7 @@ onMounted(() => {
 
         <span class="json-tree-deeper" v-show="expanded">
             <JsonTree
-                v-for="(item, index) in parsed.value"
+                v-for="(item, index) in children"
                 :key="index"
                 :kv="item"
                 :level="level" />
