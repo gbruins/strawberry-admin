@@ -2,31 +2,34 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { axiosInstance } from '@/plugins/api';
 import { supabase } from '@/plugins/supabase';
+import { resetLookups } from '@/composables/useLookups';
 
+/**
+ * The owner's session: Supabase Auth plus the tenant context from /admin/me. All owner auth
+ * flows go through these actions — pages never call supabase.auth directly.
+ */
 export const useAppStore = defineStore('appStore', () => {
-    const loggedInUser = ref(null);
-    const tenantId = ref(null);
-    const tenantName = ref(null);
-    const timezone = ref(null);
-    const role = ref(null);
+    const loggedInUser = ref<string | null>(null);
+    const tenantId = ref<string | null>(null);
+    const tenantName = ref<string | null>(null);
+    const timezone = ref<string | null>(null);
+    const role = ref<string | null>(null);
     const isPlatformStaff = ref(false);
-    const allowedStreets = ref([]);
-    const productTypes = ref([]);
-    const stripeTaxCodes = ref([]);
 
-    // In-memory state is lost on refresh, but Supabase's own client persists the session in
-    // localStorage — so on app start / a hard refresh, restore it from there rather than
-    // forcing a fresh login every time. Idempotent: safe to call from both main.js and the
-    // router guard without double-fetching once a restore is in flight or done.
-    let restorePromise = null;
+    // In-memory state is lost on refresh, but Supabase's client persists the session in
+    // localStorage — restoreSession() rebuilds from it. Idempotent: the router guard calls it on
+    // every navigation until a session exists, and concurrent calls share one in-flight restore.
+    let restorePromise: Promise<void> | null = null;
 
     async function loadMe() {
         const response = await axiosInstance.get('/admin/me');
-        tenantId.value = response.data?.data?.tenant_id ?? null;
-        tenantName.value = response.data?.data?.tenant_name ?? null;
-        timezone.value = response.data?.data?.timezone ?? null;
-        role.value = response.data?.data?.role ?? null;
-        isPlatformStaff.value = response.data?.data?.is_platform_staff ?? false;
+        const me = response.data?.data ?? {};
+
+        tenantId.value = me.tenant_id ?? null;
+        tenantName.value = me.tenant_name ?? null;
+        timezone.value = me.timezone ?? null;
+        role.value = me.role ?? null;
+        isPlatformStaff.value = me.is_platform_staff ?? false;
     }
 
     function restoreSession() {
@@ -38,14 +41,15 @@ export const useAppStore = defineStore('appStore', () => {
                     return;
                 }
 
-                loggedInUser.value = data.session.user.email;
+                loggedInUser.value = data.session.user.email ?? null;
 
                 try {
                     await loadMe();
                 }
                 catch (error) {
                     console.error('Failed to load tenant context for restored session', error);
-                    loggedInUser.value = null;
+                    // Allow a later navigation to retry instead of caching the failure forever.
+                    clearSession();
                 }
             })();
         }
@@ -61,26 +65,62 @@ export const useAppStore = defineStore('appStore', () => {
         role.value = null;
         isPlatformStaff.value = false;
         restorePromise = null;
+        resetLookups();
     }
 
-    async function updateAllowedStreetsState() {
+    /** Throws on bad credentials or if the tenant context can't be loaded (session is cleared either way). */
+    async function login(email: string, password: string) {
         try {
-            const response = await axiosInstance.get('/allowed_streets');
-            allowedStreets.value = response.data?.data || [];
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                throw error;
+            }
+
+            loggedInUser.value = data.user?.email ?? email;
+            await loadMe();
         }
         catch (error) {
-            console.error('Failed to update allowed streets state', error);
+            clearSession();
+            throw error;
         }
     }
 
-    async function updateProductTypesState() {
+    /** Signs out of Supabase (best effort) and always clears local state. */
+    async function logout() {
         try {
-            const response = await axiosInstance.get('/product_types');
-            productTypes.value = response.data?.data || [];
+            await supabase.auth.signOut();
         }
         catch (error) {
-            console.error('Failed to update product types state', error);
+            console.error('Failed to sign out of Supabase', error);
         }
+        finally {
+            clearSession();
+        }
+    }
+
+    async function requestPasswordReset(email: string) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`
+        });
+
+        if (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Sets a new password for the recovery session Supabase establishes from the reset-link URL
+     * (detectSessionInUrl), then clears local state so the owner logs in fresh.
+     */
+    async function updatePassword(password: string) {
+        const { error } = await supabase.auth.updateUser({ password });
+
+        if (error) {
+            throw error;
+        }
+
+        clearSession();
     }
 
     return {
@@ -90,13 +130,12 @@ export const useAppStore = defineStore('appStore', () => {
         timezone,
         role,
         isPlatformStaff,
-        allowedStreets,
-        productTypes,
-        stripeTaxCodes,
         loadMe,
         restoreSession,
         clearSession,
-        updateAllowedStreetsState,
-        updateProductTypesState
-    }
-})
+        login,
+        logout,
+        requestPasswordReset,
+        updatePassword
+    };
+});
