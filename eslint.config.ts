@@ -4,10 +4,8 @@ import pluginVue from 'eslint-plugin-vue'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginOxlint from 'eslint-plugin-oxlint'
 
-// To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
-// import { configureVueProject } from '@vue/eslint-config-typescript'
-// configureVueProject({ scriptLangs: ['ts', 'tsx'] })
-// More info at https://github.com/vuejs/eslint-config-typescript/#advanced-setup
+// Every .vue file uses <script setup lang="ts"> (or has no script). More info at
+// https://github.com/vuejs/eslint-config-typescript/#advanced-setup
 
 export default defineConfigWithVueTs(
   {
@@ -17,12 +15,31 @@ export default defineConfigWithVueTs(
 
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
 
-  // pluginVue.configs['flat/essential'],
-  // vueTsConfigs.recommended,
+  pluginVue.configs['flat/essential'],
+  vueTsConfigs.recommended,
 
-  // {
-  //   ...pluginVitest.configs.recommended,
-  //   files: ['src/**/__tests__/*'],
-  // },
-  // ...pluginOxlint.configs['flat/recommended'],
+  {
+    name: 'app/component-names',
+    // Single-word names are established here (Overlay, Money, PinPad, and the shadcn-vue
+    // generated primitives in components/ui, which are kept as generated so they can be re-pulled).
+    files: ['src/components/**/*.vue', 'src/pages/*.vue'],
+    rules: {
+      'vue/multi-word-component-names': 'off',
+    },
+  },
+
+  {
+    name: 'app/shadcn-generated',
+    files: ['src/components/ui/**'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+
+  {
+    ...pluginVitest.configs.recommended,
+    files: ['src/**/__tests__/*'],
+  },
+
+  ...pluginOxlint.configs['flat/recommended'],
 )

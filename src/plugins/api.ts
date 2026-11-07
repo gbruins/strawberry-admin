@@ -1,6 +1,7 @@
-import axios from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import type { App } from 'vue';
+import type { ApiUtils, Params } from '@/api/types';
 import qs from 'qs';
-import isObject from 'lodash.isobject';
 import Auth from '@/api/auth';
 import Product from '@/api/product';
 import ProductType from '@/api/product_type';
@@ -14,17 +15,19 @@ import Notification from '@/api/notification';
 import Kitchen from '@/api/kitchen';
 import KitchenStation from '@/api/kitchen_station';
 import Tenant from '@/api/tenant';
-import useBroadcastChannels from '@/composables/useBroadcastChannels';
+import { postLogout } from '@/utils/broadcast';
 import { supabase } from '@/plugins/supabase';
 import { useKitchenStationStore } from '@/stores/kitchenStation';
 import router from '@/router';
 
-export let axiosInstance = null;
+export let axiosInstance: AxiosInstance;
 
-const { getLogoutChannel, postToChannel } = useBroadcastChannels();
+
+const isObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object';
+
 
 export default {
-    install: (app) => {
+    install: (app: App) => {
         const baseURL = import.meta.env.VITE_API_BASE_URL;
 
         axiosInstance = axios.create({
@@ -56,12 +59,13 @@ export default {
             return config;
         });
 
-        const utils = {};
+        // Filled in below; each src/api/* module receives it.
+        const utils = {} as ApiUtils;
 
         // GET
-        utils.get = (url, params, config) => {
-            const cfg = {
-                paramsSerializer: (parameters) => {
+        utils.get = (url: string, params?: Params, config?: AxiosRequestConfig) => {
+            const cfg: AxiosRequestConfig = {
+                paramsSerializer: (parameters: Record<string, unknown>) => {
                     // return qs.stringify(parameters, { indices: false });
                     return qs.stringify(parameters, { arrayFormat: 'brackets' });
                 },
@@ -75,37 +79,37 @@ export default {
             return axiosInstance.get(url, cfg);
         };
 
-        utils.$get = async (url, params, config) => {
+        utils.$get = async (url: string, params?: Params, config?: AxiosRequestConfig) => {
             const response = await utils.get(url, params, config);
             return response?.data;
         };
 
 
         // POST
-        utils.post = (url, params, config) => {
+        utils.post = (url: string, params?: Params, config?: AxiosRequestConfig) => {
             return axiosInstance.post(url, params, config);
         };
 
-        utils.$post = async (url, params, config) => {
+        utils.$post = async (url: string, params?: Params, config?: AxiosRequestConfig) => {
             const response = await utils.post(url, params, config);
             return response?.data;
         };
 
 
         // PUT
-        utils.put = (url, params, config) => {
+        utils.put = (url: string, params?: Params, config?: AxiosRequestConfig) => {
             return axiosInstance.put(url, params, config);
         };
 
-        utils.$put = async (url, params, config) => {
+        utils.$put = async (url: string, params?: Params, config?: AxiosRequestConfig) => {
             const response = await utils.put(url, params, config);
             return response?.data;
         };
 
 
         // DELETE
-        utils.delete = (url, params, config) => {
-            const cfg = { ...config };
+        utils.delete = (url: string, params?: Params, config?: AxiosRequestConfig) => {
+            const cfg: AxiosRequestConfig = { ...config };
 
             if(isObject(params)) {
                 cfg.params = params;
@@ -114,60 +118,51 @@ export default {
             return axiosInstance.delete(url, cfg);
         };
 
-        utils.$delete = async (url, params, config) => {
+        utils.$delete = async (url: string, params?: Params, config?: AxiosRequestConfig) => {
             const response = await utils.delete(url, params, config);
             return response?.data;
         };
 
 
-        // MISC
-        utils.getCancelToken = () => {
-            const { CancelToken } = axiosInstance;
-            return CancelToken
-        };
 
-        utils.getCancelTokenSource = () => {
-            return axiosInstance.CancelToken.source();
-        };
-
-        utils.makeCruds = (searchPath, singlePath) => {
+        utils.makeCruds = (searchPath: string, singlePath: string) => {
             return {
-                create: (data, config) => {
+                create: (data: Params, config?: AxiosRequestConfig) => {
                     return utils.$post(singlePath, data, config);
                 },
 
-                read: (id, config) => {
+                read: (id: string, config?: AxiosRequestConfig) => {
                     return utils.$get(singlePath, { id }, config);
                 },
 
-                update: (data, config) => {
+                update: (data: Params, config?: AxiosRequestConfig) => {
                     return utils.$put(singlePath, data, config);
                 },
 
-                delete: (id, config) => {
+                delete: (id: string, config?: AxiosRequestConfig) => {
                     return utils.$delete(singlePath, { id }, config);
                 },
 
-                search: (params, config) => {
+                search: (params?: Params, config?: AxiosRequestConfig) => {
                     return utils.$get(searchPath, params, config);
                 },
             }
         }
 
         app.provide('$api', {
-            addressDiscount: AddressDiscount(utils, axiosInstance),
-            allowedStreet: AllowedStreet(utils, axiosInstance),
-            auth: Auth(utils, axiosInstance),
-            cart: Cart(utils, axiosInstance),
-            product: Product(utils, axiosInstance),
-            productType: ProductType(utils, axiosInstance),
-            service: Service(utils, axiosInstance),
-            serviceMenu: ServiceMenu(utils, axiosInstance),
-            emailSubscriber: EmailSubscriber(utils, axiosInstance),
-            notification: Notification(utils, axiosInstance),
-            kitchen: Kitchen(utils, axiosInstance),
-            kitchenStation: KitchenStation(utils, axiosInstance),
-            tenant: Tenant(utils, axiosInstance)
+            addressDiscount: AddressDiscount(utils),
+            allowedStreet: AllowedStreet(utils),
+            auth: Auth(utils),
+            cart: Cart(utils),
+            product: Product(utils),
+            productType: ProductType(utils),
+            service: Service(utils),
+            serviceMenu: ServiceMenu(utils),
+            emailSubscriber: EmailSubscriber(utils),
+            notification: Notification(utils),
+            kitchen: Kitchen(utils),
+            kitchenStation: KitchenStation(utils),
+            tenant: Tenant(utils)
         });
 
         axiosInstance.interceptors.response.use(
@@ -198,7 +193,7 @@ export default {
                             // Confirmed this actually works (independent QA review flagged it
                             // as worth checking): BroadcastChannel's "a channel doesn't receive
                             // its own posted messages" exclusion is per-OBJECT/port, not
-                            // per-tab — getLogoutChannel() returns a fresh instance each call,
+                            // per-tab — postLogout() posts through a fresh channel instance,
                             // so this tab's own DefaultLayout listener (a different object) DOES
                             // receive it. This is fragile: if DefaultLayout's mount lifecycle or
                             // this channel-instance pattern ever changes, this tab's own state
@@ -206,7 +201,7 @@ export default {
                             // consider calling clearSession() directly here instead of relying
                             // on it.
                             supabase.auth.signOut();
-                            postToChannel({ type: 'logout' }, getLogoutChannel());
+                            postLogout();
                             break;
                         }
                     }

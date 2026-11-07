@@ -151,7 +151,7 @@ router.beforeEach(async (to, from, next) => {
 
     // List of routes that don't require auth
     const publicPages = ['login', 'forgot_password', 'reset_password'];
-    const authRequired = !publicPages.includes(to.name);
+    const authRequired = !publicPages.includes(String(to.name));
 
     if (!authRequired) {
         return next();
