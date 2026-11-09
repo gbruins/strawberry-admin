@@ -1,7 +1,7 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { useKitchenStationStore } from '@/stores/kitchenStation';
-import { getKitchenRealtimeClient } from '@/plugins/kitchenRealtime';
+import { getKitchenRealtimeClient, setKitchenRealtimeToken } from '@/plugins/kitchenRealtime';
 import useApi from '@/composables/useApi';
 import { adjacentStatus, groupTicketsByStatus, type KitchenTicket } from '@/utils/kitchenTickets';
 
@@ -100,7 +100,7 @@ export default function useKitchenTickets() {
         stopPolling();
 
         const client = getKitchenRealtimeClient();
-        client.realtime.setAuth(kitchenStore.realtimeJwt);
+        setKitchenRealtimeToken(kitchenStore.realtimeJwt);
 
         channel = client
             .channel(`kitchen-tickets-${kitchenStore.tenantId}`)
@@ -137,7 +137,7 @@ export default function useKitchenTickets() {
             kitchenStore.setRealtimeJwt(response?.data?.realtime_jwt || null);
 
             if (kitchenStore.realtimeJwt && channel) {
-                getKitchenRealtimeClient().realtime.setAuth(kitchenStore.realtimeJwt);
+                setKitchenRealtimeToken(kitchenStore.realtimeJwt);
             }
             else if (kitchenStore.realtimeJwt && !channel) {
                 startRealtime();
